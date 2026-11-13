@@ -13,7 +13,7 @@
             <div class="search-box">
                 <input wire:model.live.debounce.300ms="search" type="search" class="control" placeholder="Buscar por número de guía o descripción..." aria-label="Buscar detalles">
             </div>
-            <span>Total: <strong>{{ $details->total() }}</strong></span>
+            <span>Registros en esta página: <strong>{{ $details->count() }}</strong></span>
         </div>
         <div class="table-wrap">
             <table>
@@ -60,12 +60,42 @@
                         <div class="form-grid">
                             <div class="field field-wide">
                                 <label for="detail-guide">Guía de remisión *</label>
-                                <x-searchable-select wire:model="id_cabecera" id="detail-guide" class="control" @disabled($isViewing)>
-                                    <option value="">Selecciona una guía</option>
-                                    @foreach ($guides as $guide)
-                                        <option value="{{ $guide->id_cabecera }}">N.º {{ $guide->num_guia }} · {{ $guide->nom_destinatario }}</option>
-                                    @endforeach
-                                </x-searchable-select>
+                                @if ($selectedGuide)
+                                    <div class="control flex items-center justify-between gap-3">
+                                        <span>N.º {{ $selectedGuide->num_guia }} · {{ $selectedGuide->nom_destinatario }}</span>
+                                        @unless ($isViewing)
+                                            <button wire:click="clearGuide" type="button" class="text-button">Cambiar</button>
+                                        @endunless
+                                    </div>
+                                @else
+                                    <input
+                                        wire:model.live.debounce.300ms="guideSearch"
+                                        id="detail-guide"
+                                        type="search"
+                                        class="control"
+                                        inputmode="numeric"
+                                        maxlength="20"
+                                        placeholder="Busca por número exacto de guía"
+                                        autocomplete="off"
+                                        @disabled($isViewing)
+                                    >
+                                    @if (ctype_digit($guideSearch) && $guideSearch !== '')
+                                        <div class="mt-2 grid gap-1">
+                                            @forelse ($guideResults as $guide)
+                                                <button
+                                                    wire:key="guide-result-{{ $guide->id_cabecera }}"
+                                                    wire:click="selectGuide({{ $guide->id_cabecera }})"
+                                                    type="button"
+                                                    class="control text-left"
+                                                >
+                                                    N.º {{ $guide->num_guia }} · {{ $guide->nom_destinatario }}
+                                                </button>
+                                            @empty
+                                                <span class="muted">No se encontró una guía con ese número.</span>
+                                            @endforelse
+                                        </div>
+                                    @endif
+                                @endif
                                 @error('id_cabecera') <span class="field-error">{{ $message }}</span> @enderror
                             </div>
                             <div class="field">

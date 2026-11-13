@@ -5,7 +5,13 @@ use App\Models\User;
 test('login screen can be rendered', function () {
     $response = $this->get(route('login'));
 
-    $response->assertOk();
+    $response
+        ->assertOk()
+        ->assertSee('Sistema Integral de Transporte y Logística')
+        ->assertSee('Ingresar al sistema')
+        ->assertSee('Volver a la portada')
+        ->assertSee('name="email"', false)
+        ->assertSee('name="password"', false);
 });
 
 test('users can authenticate using the login screen', function () {
@@ -31,7 +37,9 @@ test('users can not authenticate with invalid password', function () {
         'password' => 'wrong-password',
     ]);
 
-    $response->assertSessionHasErrorsIn('email');
+    $response->assertSessionHasErrors([
+        'email' => 'El correo electrónico o la contraseña no son correctos.',
+    ]);
 
     $this->assertGuest();
 });

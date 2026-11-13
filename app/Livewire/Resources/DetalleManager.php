@@ -20,6 +20,8 @@ class DetalleManager extends Component
 
     public string $search = '';
 
+    public string $guideSearch = '';
+
     public string $id_cabecera = '';
 
     public string $cantidad = '1';
@@ -47,6 +49,24 @@ class DetalleManager extends Component
         $this->resetPage();
     }
 
+    public function selectGuide(int $guideId): void
+    {
+        $guide = Cabecera::query()->findOrFail($guideId);
+
+        if (auth()->user()?->isBranchRestricted() && (int) $guide->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para seleccionar una guía de otra sucursal.');
+        }
+
+        $this->id_cabecera = (string) $guide->id_cabecera;
+        $this->guideSearch = '';
+    }
+
+    public function clearGuide(): void
+    {
+        $this->id_cabecera = '';
+        $this->guideSearch = '';
+    }
+
     public function create(): void
     {
         $this->resetForm();
@@ -55,9 +75,15 @@ class DetalleManager extends Component
 
     public function edit(int $id): void
     {
-        $detail = Detalle::query()->findOrFail($id);
+        $detail = Detalle::query()->with('cabecera')->findOrFail($id);
+
+        if (auth()->user()?->isBranchRestricted() && (int) $detail->cabecera?->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para acceder a detalles de otra sucursal.');
+        }
+
         $this->selectedId = $detail->id_detalle;
         $this->id_cabecera = (string) $detail->id_cabecera;
+        $this->guideSearch = '';
         $this->cantidad = (string) $detail->cantidad;
         $this->descripcion = $detail->descripcion;
         $this->v_unitario = (string) $detail->v_unitario;
@@ -92,6 +118,13 @@ class DetalleManager extends Component
             'descripcion' => ['required', 'string', 'max:100'],
             'v_unitario' => ['required', 'numeric', 'min:0'],
         ]);
+
+        $guide = Cabecera::query()->findOrFail($validated['id_cabecera']);
+
+        if (auth()->user()?->isBranchRestricted() && (int) $guide->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para operar en una guía de otra sucursal.');
+        }
+
         $detailData = [
             'id_cabecera' => $validated['id_cabecera'],
             'cantidad' => (int) $validated['cantidad'],
@@ -101,7 +134,13 @@ class DetalleManager extends Component
         ];
 
         if ($this->isEditing) {
-            Detalle::query()->findOrFail($this->selectedId)->update($detailData);
+            $existingDetail = Detalle::query()->with('cabecera')->findOrFail($this->selectedId);
+
+            if (auth()->user()?->isBranchRestricted() && (int) $existingDetail->cabecera?->id_sucursal !== (int) auth()->user()->id_sucursal) {
+                abort(403, 'No tienes autorización para modificar detalles de otra sucursal.');
+            }
+
+            $existingDetail->update($detailData);
         } else {
             Detalle::query()->create($detailData);
         }
@@ -112,7 +151,12 @@ class DetalleManager extends Component
 
     public function prepareDelete(int $id): void
     {
-        $detail = Detalle::query()->findOrFail($id);
+        $detail = Detalle::query()->with('cabecera')->findOrFail($id);
+
+        if (auth()->user()?->isBranchRestricted() && (int) $detail->cabecera?->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para eliminar detalles de otra sucursal.');
+        }
+
         $this->deleteId = $id;
         $this->deleteLabel = $detail->descripcion;
         $this->showDeleteModal = true;
@@ -126,7 +170,13 @@ class DetalleManager extends Component
             return;
         }
 
-        Detalle::query()->findOrFail($this->deleteId)->delete();
+        $detail = Detalle::query()->with('cabecera')->findOrFail($this->deleteId);
+
+        if (auth()->user()?->isBranchRestricted() && (int) $detail->cabecera?->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para eliminar detalles de otra sucursal.');
+        }
+
+        $detail->delete();
         $this->showDeleteModal = false;
         $this->deleteId = null;
         $this->deleteLabel = '';
@@ -139,20 +189,30 @@ class DetalleManager extends Component
 
         return view('livewire.resources.detalle-manager', [
             'details' => Detalle::query()
-                ->with('cabecera')
+                ->with('cabecera:id_cabecera,num_guia')
                 ->when($search !== '', function ($query) use ($search): void {
-                    $query->where('descripcion', 'like', "%{$search}%")
-                        ->orWhereHas('cabecera', fn ($guideQuery) => $guideQuery->where('num_guia', 'like', "%{$search}%"));
+                    $query->where(function ($detailQuery) use ($search): void {
+                        $detailQuery->where('descripcion', 'like', "%{$search}%")
+                            ->orWhereHas('cabecera', fn ($guideQuery) => $guideQuery->where('num_guia', 'like', "%{$search}%"));
+                    });
                 })
                 ->latest('id_detalle')
-                ->paginate(10),
-            'guides' => Cabecera::query()->orderByDesc('num_guia')->get(['id_cabecera', 'num_guia', 'nom_destinatario']),
+                ->simplePaginate(10),
+            'selectedGuide' => $this->showModal && $this->id_cabecera !== ''
+                ? Cabecera::query()->find($this->id_cabecera, ['id_cabecera', 'num_guia', 'nom_destinatario'])
+                : null,
+            'guideResults' => $this->showModal && strlen($this->guideSearch) <= 20 && ctype_digit($this->guideSearch)
+                ? Cabecera::query()
+                    ->where('num_guia', $this->guideSearch)
+                    ->limit(1)
+                    ->get(['id_cabecera', 'num_guia', 'nom_destinatario'])
+                : collect(),
         ]);
     }
 
     private function resetForm(): void
     {
-        $this->reset(['id_cabecera', 'descripcion', 'selectedId']);
+        $this->reset(['id_cabecera', 'descripcion', 'selectedId', 'guideSearch']);
         $this->cantidad = '1';
         $this->v_unitario = '0.00';
         $this->isEditing = false;

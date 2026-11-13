@@ -26,6 +26,8 @@ class LegacyUsersSeeder extends Seeder
             throw new RuntimeException('Ejecute las migraciones antes de importar usuarios heredados.');
         }
 
+        $this->call(LegacyAccessControlSeeder::class);
+
         $roleMappings = DB::table('legacy_import_mappings')
             ->where('source_table', 'rol')
             ->get()
@@ -108,9 +110,10 @@ class LegacyUsersSeeder extends Seeder
         }
 
         $attributes = $this->attributesFor($row, $sourceId);
-        $checksum = hash('sha256', serialize([
+        $checksum = $this->checksumFor($attributes, $legacyRoleId);
+        $previousChecksum = hash('sha256', serialize([
             'attributes' => $attributes,
-            'role' => $role?->name,
+            'role' => $role === null ? null : mb_strtoupper($role->name),
         ]));
         $mapping = DB::table('legacy_import_mappings')
             ->where('source_table', 'users')
@@ -118,7 +121,10 @@ class LegacyUsersSeeder extends Seeder
             ->first();
 
         if ($mapping !== null) {
-            if (! hash_equals($mapping->checksum, $checksum)) {
+            if (
+                ! hash_equals($mapping->checksum, $checksum)
+                && ! hash_equals($mapping->checksum, $previousChecksum)
+            ) {
                 throw new RuntimeException("El usuario users:{$sourceId} cambió desde su importación anterior.");
             }
 
@@ -126,20 +132,40 @@ class LegacyUsersSeeder extends Seeder
                 throw new RuntimeException("Falta el usuario local mapeado para users:{$sourceId}.");
             }
 
+            if (! hash_equals($mapping->checksum, $checksum)) {
+                DB::table('legacy_import_mappings')
+                    ->where('id', $mapping->id)
+                    ->update([
+                        'checksum' => $checksum,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            $user = User::query()->findOrFail($mapping->target_id);
+
+            if ($role !== null && ! $user->hasRole($role)) {
+                $user->assignRole($role);
+            }
+
             return false;
         }
 
-        if (
-            DB::table('users')->where('id', $sourceId)->exists()
-            || DB::table('users')->where('email', $attributes['email'])->exists()
-        ) {
-            throw new RuntimeException("Colisión de identificador o correo al importar users:{$sourceId}; no se modificaron usuarios existentes.");
+        $existingUserId = DB::table('users')
+            ->where('email', $attributes['email'])
+            ->value('id');
+
+        if ($existingUserId !== null) {
+            throw new RuntimeException("El correo heredado de users:{$sourceId} ya está asociado al usuario local {$existingUserId}; no se creó un duplicado.");
+        }
+
+        if (DB::table('users')->where('id', $sourceId)->exists()) {
+            throw new RuntimeException("Colisión de identificador al importar users:{$sourceId}; no se modificaron usuarios existentes.");
         }
 
         DB::table('users')->insert($attributes);
 
         if ($role !== null) {
-            User::query()->findOrFail($sourceId)->syncRoles($role);
+            User::query()->findOrFail($sourceId)->assignRole($role);
         }
 
         DB::table('legacy_import_mappings')->insert([
@@ -152,6 +178,17 @@ class LegacyUsersSeeder extends Seeder
         ]);
 
         return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function checksumFor(array $attributes, string $legacyRoleId): string
+    {
+        return hash('sha256', serialize([
+            'attributes' => $attributes,
+            'legacy_role_id' => $legacyRoleId,
+        ]));
     }
 
     /**

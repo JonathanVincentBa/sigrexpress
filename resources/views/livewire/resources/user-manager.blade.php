@@ -85,12 +85,45 @@
                             </div>
                             <div class="field">
                                 <label for="user-persona">Persona vinculada</label>
-                                <x-searchable-select wire:model="id_persona" id="user-persona" class="control" @disabled($isViewing)>
-                                    <option value="">Sin persona vinculada</option>
-                                    @foreach ($personas as $persona)
-                                        <option value="{{ $persona->id_persona }}">{{ $persona->nombre }} · {{ $persona->num_dni }}</option>
-                                    @endforeach
-                                </x-searchable-select>
+                                @if ($selectedPersona)
+                                    <div class="control flex items-center justify-between gap-3">
+                                        <span>{{ $selectedPersona->nombre }} · {{ $selectedPersona->num_dni }}</span>
+                                        @unless ($isViewing)
+                                            <button wire:click="clearPersona" type="button" class="text-button">Quitar</button>
+                                        @endunless
+                                    </div>
+                                @elseif ($isViewing)
+                                    <div class="control">Sin persona vinculada</div>
+                                @else
+                                    <input
+                                        wire:model.live.debounce.300ms="personaSearch"
+                                        id="user-persona"
+                                        type="search"
+                                        class="control"
+                                        maxlength="100"
+                                        placeholder="Buscar por nombre o identificación"
+                                        autocomplete="off"
+                                    >
+                                    @if (mb_strlen(trim($personaSearch)) >= 2)
+                                        <div class="mt-2 grid gap-1">
+                                            @forelse ($personaResults as $persona)
+                                                <button
+                                                    wire:key="persona-result-{{ $persona->id_persona }}"
+                                                    wire:click="selectPersona({{ $persona->id_persona }})"
+                                                    type="button"
+                                                    class="control text-left"
+                                                >
+                                                    {{ $persona->nombre }} · {{ $persona->num_dni }}
+                                                </button>
+                                            @empty
+                                                <span class="muted">No se encontraron personas.</span>
+                                            @endforelse
+                                        </div>
+                                    @else
+                                        <span class="muted">Escribe al menos dos caracteres para buscar; este campo es opcional.</span>
+                                    @endif
+                                    <button wire:click="clearPersona" type="button" class="text-button">Sin persona vinculada</button>
+                                @endif
                                 @error('id_persona') <span class="field-error">{{ $message }}</span> @enderror
                             </div>
                             <div class="field">

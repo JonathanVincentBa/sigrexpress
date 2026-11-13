@@ -86,12 +86,16 @@
                                 </div>
                                 <div class="field">
                                     <label for="guide-branch">Sucursal *</label>
-                                    <x-searchable-select wire:model="formData.id_sucursal" id="guide-branch" class="control" @disabled($isViewing)>
-                                        <option value="">Selecciona una sucursal</option>
-                                        @foreach ($sucursales as $sucursal)
-                                            <option value="{{ $sucursal->id_sucursal }}">{{ $sucursal->nombre }} · {{ $sucursal->ciudad?->descripcion ?? 'Ciudad no disponible' }} · {{ $sucursal->empresa?->razon_social ?? 'Empresa no disponible' }}{{ $sucursal->estado === '1' ? '' : ' · Inactiva' }}</option>
-                                        @endforeach
-                                    </x-searchable-select>
+                                    @if (auth()->user()?->isBranchRestricted())
+                                        <input type="text" class="control" value="{{ auth()->user()->sucursal?->nombre ?? 'Sucursal asignada' }}" disabled readonly>
+                                    @else
+                                        <x-searchable-select wire:model="formData.id_sucursal" id="guide-branch" class="control" @disabled($isViewing)>
+                                            <option value="">Selecciona una sucursal</option>
+                                            @foreach ($sucursales as $sucursal)
+                                                <option value="{{ $sucursal->id_sucursal }}">{{ $sucursal->nombre }} · {{ $sucursal->ciudad?->descripcion ?? 'Ciudad no disponible' }} · {{ $sucursal->empresa?->razon_social ?? 'Empresa no disponible' }}{{ $sucursal->estado === '1' ? '' : ' · Inactiva' }}</option>
+                                            @endforeach
+                                        </x-searchable-select>
+                                    @endif
                                     @error('formData.id_sucursal') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">

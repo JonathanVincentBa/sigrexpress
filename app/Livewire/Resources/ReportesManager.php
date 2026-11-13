@@ -30,6 +30,8 @@ class ReportesManager extends Component
 
     public string $cliente = '';
 
+    public string $customerSearch = '';
+
     public string $ciudad_origen = '';
 
     public string $ciudad_destino = '';
@@ -69,6 +71,33 @@ class ReportesManager extends Component
             $this->searched = false;
             $this->resetPage();
         }
+    }
+
+    public function updatedCustomerSearch(): void
+    {
+        if ($this->customerSearch !== '') {
+            $this->cliente = '';
+            $this->searched = false;
+        }
+    }
+
+    public function selectCustomer(int $customerId): void
+    {
+        $customer = Persona::query()
+            ->where('tipo_persona', 'C')
+            ->where('estado', '1')
+            ->findOrFail($customerId);
+
+        $this->cliente = (string) $customer->id_persona;
+        $this->customerSearch = '';
+        $this->searched = false;
+    }
+
+    public function clearCustomer(): void
+    {
+        $this->cliente = '';
+        $this->customerSearch = '';
+        $this->searched = false;
     }
 
     public function preview(): void
@@ -142,7 +171,25 @@ class ReportesManager extends Component
             'guides' => $query?->paginate(15),
             'reportTotal' => $query === null ? 0 : (clone $query)->sum('valor_guia'),
             'reportTypes' => $this->reports->reportTypes(),
-            'customers' => Persona::query()->where('tipo_persona', 'C')->where('estado', '1')->orderBy('nombre')->get(['id_persona', 'nombre', 'num_dni']),
+            'selectedCustomer' => $this->cliente !== ''
+                ? Persona::query()
+                    ->where('tipo_persona', 'C')
+                    ->find($this->cliente, ['id_persona', 'nombre', 'num_dni'])
+                : null,
+            'customerResults' => mb_strlen(trim($this->customerSearch)) >= 2
+                && mb_strlen(trim($this->customerSearch)) <= 100
+                ? Persona::query()
+                    ->where('tipo_persona', 'C')
+                    ->where('estado', '1')
+                    ->where(function ($query): void {
+                        $search = trim($this->customerSearch);
+                        $query->where('nombre', 'like', "{$search}%")
+                            ->orWhere('num_dni', 'like', "{$search}%");
+                    })
+                    ->orderBy('nombre')
+                    ->limit(20)
+                    ->get(['id_persona', 'nombre', 'num_dni'])
+                : collect(),
             'cities' => Ciudad::query()->where('estado', '1')->orderBy('descripcion')->pluck('descripcion'),
             'branches' => Sucursal::query()->where('estado', '1')->orderBy('nombre')->get(['id_sucursal', 'nombre']),
             'users' => User::query()->where('estado', '1')->orderBy('name')->get(['id', 'name']),

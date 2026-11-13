@@ -34,7 +34,10 @@ INSERT INTO `motivo_traslado` (`id_motivo_traslado`,`descripcion`,`estado`,`upda
 SQL),
         'rol' => $writeDump(<<<'SQL'
 INSERT INTO `rol` (`id_rol`,`descripcion`,`estado`) VALUES
-(1,'Administrador','1');
+(1,'Administrador','1'),
+(2,'Secretaria','1'),
+(3,'Chofer','1'),
+(4,'Cliente','1');
 SQL),
         'ciudad' => $writeDump(<<<'SQL'
 INSERT INTO `ciudad` (`id_ciudad`,`descripcion`,`estado`,`updated_at`,`created_at`) VALUES
@@ -55,7 +58,10 @@ INSERT INTO `persona` (`id_persona`,`id_empresa`,`id_cargo`,`tipo_persona`,`nomb
 SQL),
         'users' => $writeDump(str_replace('$passwordHash', $passwordHash, <<<'SQL'
 INSERT INTO `users` (`id`,`id_rol`,`id_persona`,`name`,`email`,`password`,`remember_token`,`created_at`,`updated_at`,`estado`) VALUES
-(1,1,1,'Usuario de Prueba','USER@EXAMPLE.TEST','$passwordHash','legacy-token','2026-01-02 03:04:05','2026-01-02 03:04:05','1');
+(1,1,1,'Usuario de Prueba','USER@EXAMPLE.TEST','$passwordHash','legacy-token','2026-01-02 03:04:05','2026-01-02 03:04:05','1'),
+(2,2,0,'Secretaria de Prueba','SECRETARIA@EXAMPLE.TEST','$passwordHash',NULL,'2026-01-02 03:04:05','2026-01-02 03:04:05','1'),
+(3,3,0,'Chofer de Prueba','CHOFER@EXAMPLE.TEST','$passwordHash',NULL,'2026-01-02 03:04:05','2026-01-02 03:04:05','1'),
+(4,4,0,'Cliente de Prueba','CLIENTE@EXAMPLE.TEST','$passwordHash',NULL,'2026-01-02 03:04:05','2026-01-02 03:04:05','1');
 SQL)),
         'cabecera' => $writeDump(<<<'SQL'
 INSERT INTO `cabecera` (`id_cabecera`,`id_sucursal`,`id_motivo_traslado`,`id_forma_pago`,`id_users`,`id_persona`,`id_users_update`,`fecha_cancelacion`,`ciudad_origen`,`ciudad_destino`,`nom_remitente`,`dni_remitente`,`direccion_remitente`,`fono_remitente`,`nom_destinatario`,`dni_destinatario`,`direccion_destinatario`,`fono_destinatario`,`num_guia`,`num_guia_trans`,`fecha_emision`,`fecha_recepcion`,`guia_rem_cliente`,`factura_cliente`,`flete`,`recargo`,`valor_guia`,`prima`,`nombre_recibe`,`dni_recibe`,`estatus_entrega`,`estatus_cobro`,`estado`,`nota`,`updated_at`,`created_at`) VALUES
@@ -96,6 +102,9 @@ SQL),
         app(LegacySqlImportSeeder::class)->run();
 
         $user = User::query()->findOrFail(1);
+        $secretaryUser = User::query()->findOrFail(2);
+        $driverUser = User::query()->findOrFail(3);
+        $clientUser = User::query()->findOrFail(4);
         $branch = DB::table('sucursal')->where('id_sucursal', 1)->first();
         $city = DB::table('ciudad')->where('id_ciudad', $branch->id_ciudad)->first();
         $versallesBranch = DB::table('sucursal')->where('id_sucursal', 2)->first();
@@ -103,7 +112,10 @@ SQL),
 
         expect($user->name)->toBe('USUARIO DE PRUEBA')
             ->and($user->email)->toBe('user@example.test')
-            ->and($user->hasRole('ADMINISTRADOR'))->toBeTrue()
+            ->and($user->hasRole('Administrador'))->toBeTrue()
+            ->and($secretaryUser->hasRole('Secretaria'))->toBeTrue()
+            ->and($driverUser->hasRole('Chofer'))->toBeTrue()
+            ->and($clientUser->hasRole('CLIENTE'))->toBeTrue()
             ->and($user->remember_token)->toBeNull()
             ->and($branch->nombre)->toBe('Agencia Quito Sur')
             ->and($city->descripcion)->toBe('Quito')
@@ -114,9 +126,9 @@ SQL),
             ->and(DB::table('cabecera')->where('num_guia', 77)->value('estado_tracking'))->toBe('EN BODEGA')
             ->and(DB::table('detalle')->where('id_detalle', 1)->exists())->toBeTrue();
 
-        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseCount('users', 4);
         $this->assertDatabaseHas('cargo', ['id_cargo' => 1, 'created_at' => null, 'updated_at' => null]);
-        $this->assertDatabaseCount('legacy_import_mappings', 20);
+        $this->assertDatabaseCount('legacy_import_mappings', 26);
         $this->assertDatabaseHas('legacy_import_mappings', [
             'source_table' => 'ciudad',
             'source_id' => '1',
@@ -149,7 +161,7 @@ SQL),
         $this->assertDatabaseMissing('sucursal', ['nombre' => 'Agencia El Guambra']);
         $this->assertDatabaseHas('cabecera', ['id_cabecera' => 2, 'id_persona' => null, 'id_sucursal' => null]);
         $this->assertDatabaseHas('detalle', ['id_detalle' => 2, 'id_cabecera' => null]);
-        $this->assertDatabaseHas('roles', ['name' => 'ADMINISTRADOR', 'guard_name' => 'web']);
+        $this->assertDatabaseHas('roles', ['name' => 'Administrador', 'guard_name' => 'web']);
 
         file_put_contents($files['ciudad'], <<<'SQL'
 INSERT INTO `ciudad` (`id_ciudad`,`descripcion`,`estado`,`updated_at`,`created_at`) VALUES

@@ -150,7 +150,7 @@
 <div class="shell">
     <!-- BARRA LATERAL (SIDEBAR #14243b) -->
     <aside class="side">
-        <a class="brand" href="{{ route('dashboard') }}">
+        <a class="brand" href="{{ route('dashboard') }}" wire:navigate>
             <span class="brand-mark">SE</span>
             <div>
                 <span class="brand-name">SIGRExpress</span>
@@ -164,7 +164,7 @@
 
         <nav aria-label="Menú principal">
             <!-- PANEL PRINCIPAL -->
-            <a class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+            <a class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Panel Principal</span>
             </a>
@@ -172,32 +172,32 @@
             <!-- 1. OPERACIÓN -->
             <p class="nav-title">Operación</p>
             <a class="nav-item {{ request()->routeIs('resources.cabecera.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.cabecera.index') }}">
+               href="{{ $routeHref('resources.cabecera.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Guías / Cabecera</span>
             </a>
-            <a class="nav-item {{ request()->routeIs('resources.detalle.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.detalle.index') }}">
+            {{-- <a class="nav-item {{ request()->routeIs('resources.detalle.*') ? 'active' : '' }}" 
+               href="{{ $routeHref('resources.detalle.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Detalles de Guías</span>
-            </a>
+            </a> --}}
             <a class="nav-item {{ request()->routeIs('resources.guia-estado.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.guia-estado.index') }}">
+               href="{{ $routeHref('resources.guia-estado.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Estados de Guías</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.manifiesto.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.manifiesto.index') }}">
+               href="{{ $routeHref('resources.manifiesto.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Manifiestos de Carga</span>
             </a>
             <a class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('reports.index') }}">
+               href="{{ $routeHref('reports.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Reportes Gerenciales</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.persona.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.persona.index') }}">
+               href="{{ $routeHref('resources.persona.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Personas</span>
             </a>
@@ -205,7 +205,7 @@
             <!-- 2. RECURSOS HUMANOS (RRHH) -->
             <p class="nav-title">Recursos Humanos (RRHH)</p>
             <a class="nav-item {{ request()->routeIs('resources.persona.index') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.persona.index') }}">
+               href="{{ $routeHref('resources.persona.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Control Personal / Empleados</span>
             </a>
@@ -213,37 +213,37 @@
             <!-- 3. ADMINISTRACIÓN -->
             <p class="nav-title">Administración</p>
             <a class="nav-item {{ request()->routeIs('resources.empresa.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.empresa.index') }}">
+               href="{{ $routeHref('resources.empresa.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Empresas</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.sucursal.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.sucursal.index') }}">
+               href="{{ $routeHref('resources.sucursal.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Sucursales</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.ciudad.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.ciudad.index') }}">
+               href="{{ $routeHref('resources.ciudad.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Ciudades</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.cargo.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.cargo.index') }}">
+               href="{{ $routeHref('resources.cargo.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Cargos</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.motivo-traslado.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.motivo-traslado.index') }}">
+               href="{{ $routeHref('resources.motivo-traslado.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Motivos de Traslado</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.formas-pago.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.formas-pago.index') }}">
+               href="{{ $routeHref('resources.formas-pago.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Formas de Pago</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.vehiculo.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.vehiculo.index') }}">
+               href="{{ $routeHref('resources.vehiculo.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Vehículos</span>
             </a>
@@ -251,17 +251,17 @@
             <!-- 4. SEGURIDAD -->
             <p class="nav-title">Seguridad</p>
             <a class="nav-item {{ request()->routeIs('resources.users.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.users.index') }}">
+               href="{{ $routeHref('resources.users.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Usuarios</span>
             </a>
             <a class="nav-item {{ request()->routeIs('resources.roles.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.roles.index') }}">
+               href="{{ $routeHref('resources.roles.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Roles y Permisos</span>
             </a>
             <a class="nav-item {{ request()->routeIs('manual.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('manual.index') }}">
+               href="{{ $routeHref('manual.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Manual de Ayuda</span>
             </a>
@@ -306,7 +306,7 @@
 @livewireScripts
 @include('sweetalert::alert')
 
-<script>
+<script data-navigate-once>
     document.addEventListener('livewire:init', () => {
         Livewire.on('swal', (event) => {
             const data = Array.isArray(event) ? event[0] : event;

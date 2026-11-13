@@ -35,6 +35,8 @@ class UserManager extends Component
 
     public string $id_persona = '';
 
+    public string $personaSearch = '';
+
     public string $estado = '1';
 
     /** @var array<int, string|int> */
@@ -69,6 +71,27 @@ class UserManager extends Component
         $this->resetPage();
     }
 
+    public function updatedPersonaSearch(): void
+    {
+        if ($this->personaSearch !== '') {
+            $this->id_persona = '';
+        }
+    }
+
+    public function selectPersona(int $personaId): void
+    {
+        $persona = Persona::query()->findOrFail($personaId);
+
+        $this->id_persona = (string) $persona->id_persona;
+        $this->personaSearch = '';
+    }
+
+    public function clearPersona(): void
+    {
+        $this->id_persona = '';
+        $this->personaSearch = '';
+    }
+
     public function create(): void
     {
         $this->resetForm();
@@ -82,6 +105,7 @@ class UserManager extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->id_persona = (string) ($user->id_persona ?? '');
+        $this->personaSearch = '';
         $this->estado = $user->estado;
         $this->roles = $user->roles->pluck('id')->all();
         $this->password = '';
@@ -217,7 +241,22 @@ class UserManager extends Component
 
         return view('livewire.resources.user-manager', [
             'users' => $users,
-            'personas' => Persona::query()->orderBy('nombre')->get(['id_persona', 'nombre', 'num_dni']),
+            'selectedPersona' => $this->showModal && $this->id_persona !== ''
+                ? Persona::withTrashed()->find($this->id_persona, ['id_persona', 'nombre', 'num_dni'])
+                : null,
+            'personaResults' => $this->showModal
+                && mb_strlen(trim($this->personaSearch)) >= 2
+                && mb_strlen(trim($this->personaSearch)) <= 100
+                ? Persona::query()
+                    ->where(function ($query): void {
+                        $search = trim($this->personaSearch);
+                        $query->where('nombre', 'like', "{$search}%")
+                            ->orWhere('num_dni', 'like', "{$search}%");
+                    })
+                    ->orderBy('nombre')
+                    ->limit(20)
+                    ->get(['id_persona', 'nombre', 'num_dni'])
+                : collect(),
             'availableRoles' => Role::query()->where('guard_name', 'web')->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -230,6 +269,7 @@ class UserManager extends Component
             'password',
             'password_confirmation',
             'id_persona',
+            'personaSearch',
             'selectedId',
             'roles',
         ]);

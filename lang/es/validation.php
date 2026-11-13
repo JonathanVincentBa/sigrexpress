@@ -201,6 +201,7 @@ return [
         'guard_name' => 'guard',
         'id_cabecera' => 'guía de remisión',
         'id_persona' => 'persona vinculada',
+        'email' => 'correo electrónico',
         'name' => 'nombre',
         'password' => 'contraseña',
         'password_confirmation' => 'confirmación de contraseña',

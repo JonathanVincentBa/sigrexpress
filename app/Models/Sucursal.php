@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use App\Models\Scopes\AssignedBranchScope;
 
 /**
  * @property int $id_sucursal
@@ -39,6 +40,11 @@ class Sucursal extends Model
     protected $table = 'sucursal';
 
     protected $primaryKey = 'id_sucursal';
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AssignedBranchScope);
+    }
 
     /**
      * @return BelongsTo<Empresa, $this>

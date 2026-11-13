@@ -12,7 +12,6 @@ use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use LogicException;
 
 #[Layout('components.layouts.app')]
 #[Title('Panel Gerencial')]
@@ -27,56 +26,88 @@ class DashboardManager extends Component
     {
         $monthStart = CarbonImmutable::now()->startOfMonth();
         $monthEnd = $monthStart->endOfMonth();
-        $monthly = [];
+        $monthlyExpressions = [];
+        $monthlyBindings = [];
+        $monthlyPeriods = [];
 
         for ($offset = 5; $offset >= 0; $offset--) {
-            $month = CarbonImmutable::parse($monthStart->subMonths($offset));
+            $month = $monthStart->subMonths($offset);
             $localizedMonth = $month->locale('es');
-
-            if (! $localizedMonth instanceof CarbonImmutable) {
-                throw new LogicException('El mes del panel debe conservar una fecha inmutable.');
-            }
-
-            $monthly[] = [
+            $monthlyPeriods[] = [
                 'label' => $localizedMonth->translatedFormat('M'),
-                'count' => Cabecera::query()
-                    ->whereBetween('fecha_emision', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
-                    ->where('estado', '1')
-                    ->count(),
-                'revenue' => (float) Cabecera::query()
-                    ->whereBetween('fecha_emision', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
-                    ->where('estado', '1')
-                    ->sum('valor_guia'),
+                'countAlias' => "count_{$offset}",
+                'revenueAlias' => "revenue_{$offset}",
             ];
+            $monthlyExpressions[] = "SUM(CASE WHEN fecha_emision BETWEEN ? AND ? THEN 1 ELSE 0 END) as count_{$offset}";
+            $monthlyExpressions[] = "SUM(CASE WHEN fecha_emision BETWEEN ? AND ? THEN valor_guia ELSE 0 END) as revenue_{$offset}";
+            $monthlyBindings[] = $month->startOfMonth()->toDateTimeString();
+            $monthlyBindings[] = $month->endOfMonth()->toDateTimeString();
+            $monthlyBindings[] = $month->startOfMonth()->toDateTimeString();
+            $monthlyBindings[] = $month->endOfMonth()->toDateTimeString();
         }
 
+        $monthlyTotals = Cabecera::query()
+            ->where('estado', '1')
+            ->whereBetween('fecha_emision', [
+                $monthStart->subMonths(5)->toDateTimeString(),
+                $monthEnd->toDateTimeString(),
+            ])
+            ->selectRaw(implode(', ', $monthlyExpressions), $monthlyBindings)
+            ->first();
+
+        $monthly = array_map(
+            fn (array $period): array => [
+                'label' => $period['label'],
+                'count' => (int) $monthlyTotals->{$period['countAlias']},
+                'revenue' => (float) $monthlyTotals->{$period['revenueAlias']},
+            ],
+            $monthlyPeriods,
+        );
+
         $maximumMonthlyCount = max(1, max(array_column($monthly, 'count')));
+        $branchAggregates = Cabecera::query()
+            ->selectRaw(
+                "id_sucursal,
+                SUM(CASE WHEN fecha_emision BETWEEN ? AND ? AND estado = '1' THEN valor_guia ELSE 0 END) as monthly_total,
+                SUM(CASE WHEN estado = '1' THEN valor_guia ELSE 0 END) as historical_total,
+                SUM(CASE WHEN estado = '1' AND UPPER(estatus_cobro) = 'PENDIENTE' THEN valor_guia ELSE 0 END) as pending_total",
+                [$monthStart->toDateTimeString(), $monthEnd->toDateTimeString()],
+            )
+            ->with('sucursal:id_sucursal,nombre')
+            ->groupBy('id_sucursal')
+            ->get();
+
+        $branchCosts = $branchAggregates
+            ->filter(fn (Cabecera $branch): bool => (float) $branch->monthly_total > 0)
+            ->sortByDesc('monthly_total')
+            ->map(fn (Cabecera $branch): object => (object) [
+                'id_sucursal' => $branch->id_sucursal,
+                'total' => $branch->monthly_total,
+                'sucursal' => $branch->sucursal,
+            ])
+            ->values();
+
+        $historicalBranchValues = $branchAggregates
+            ->filter(fn (Cabecera $branch): bool => (float) $branch->historical_total > 0)
+            ->sortByDesc('historical_total')
+            ->map(fn (Cabecera $branch): object => (object) [
+                'id_sucursal' => $branch->id_sucursal,
+                'total' => $branch->historical_total,
+                'sucursal' => $branch->sucursal,
+            ])
+            ->values();
 
         return view('livewire.dashboard-manager', [
             'metrics' => [
-                'guias' => Cabecera::query()->whereBetween('fecha_emision', [$monthStart, $monthEnd])->where('estado', '1')->count(),
-                'ingresos' => (float) Cabecera::query()->whereBetween('fecha_emision', [$monthStart, $monthEnd])->where('estado', '1')->sum('valor_guia'),
-                'pendiente' => (float) Cabecera::query()->where('estado', '1')->whereRaw('UPPER(estatus_cobro) = ?', ['PENDIENTE'])->sum('valor_guia'),
+                'guias' => (int) $monthlyTotals->count_0,
+                'ingresos' => (float) $monthlyTotals->revenue_0,
+                'pendiente' => (float) $branchAggregates->sum('pending_total'),
                 'flota' => Vehiculo::query()->where('estado', '1')->count(),
             ],
             'monthly' => $monthly,
             'maximumMonthlyCount' => $maximumMonthlyCount,
-            'branchCosts' => Cabecera::query()
-                ->selectRaw('id_sucursal, SUM(valor_guia) as total')
-                ->with('sucursal:id_sucursal,nombre')
-                ->whereBetween('fecha_emision', [$monthStart, $monthEnd])
-                ->where('estado', '1')
-                ->groupBy('id_sucursal')
-                ->orderByDesc('total')
-                ->get(),
-            'historicalBranchValues' => Cabecera::query()
-                ->selectRaw('id_sucursal, SUM(valor_guia) as total')
-                ->with('sucursal:id_sucursal,nombre')
-                ->where('estado', '1')
-                ->groupBy('id_sucursal')
-                ->havingRaw('SUM(valor_guia) > 0')
-                ->orderByDesc('total')
-                ->get(),
+            'branchCosts' => $branchCosts,
+            'historicalBranchValues' => $historicalBranchValues,
             'catalogCounts' => [
                 'clientes' => Persona::query()->where('tipo_persona', 'C')->where('estado', '1')->count(),
                 'sucursales' => Sucursal::query()->where('estado', '1')->count(),

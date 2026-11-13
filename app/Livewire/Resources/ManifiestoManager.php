@@ -109,8 +109,27 @@ class ManifiestoManager extends Component
                 ]);
             }
 
+            if (auth()->user()?->isBranchRestricted()) {
+                $assignedBranch = (int) auth()->user()->id_sucursal;
+
+                if ($vehicle->id_sucursal !== null && (int) $vehicle->id_sucursal !== $assignedBranch) {
+                    abort(403, 'No tienes autorización para asignar un vehículo de otra sucursal.');
+                }
+
+                foreach ($guides as $guide) {
+                    if ($guide->id_sucursal !== null && (int) $guide->id_sucursal !== $assignedBranch) {
+                        abort(403, 'No tienes autorización para asignar guías de otra sucursal.');
+                    }
+                }
+            }
+
+            $manifestBranchId = auth()->user()?->isBranchRestricted()
+                ? auth()->user()->id_sucursal
+                : ($vehicle->id_sucursal ?? auth()->user()?->id_sucursal);
+
             $manifest = Manifiesto::query()->create([
                 'codigo' => 'MNF-'.Str::upper((string) Str::ulid()),
+                'id_sucursal' => $manifestBranchId,
                 'id_vehiculo' => $vehicle->id_vehiculo,
                 'id_chofer' => $validated['idChofer'],
                 'id_usuario' => auth()->id(),
@@ -139,6 +158,10 @@ class ManifiestoManager extends Component
     public function close(int $id): void
     {
         $manifest = Manifiesto::query()->with('guias')->findOrFail($id);
+
+        if (auth()->user()?->isBranchRestricted() && $manifest->id_sucursal !== null && (int) $manifest->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para cerrar manifiestos de otra sucursal.');
+        }
 
         if ($manifest->estado !== 'EN CAMINO') {
             $this->alertWarning('No se puede cerrar', 'El manifiesto no está en tránsito.');

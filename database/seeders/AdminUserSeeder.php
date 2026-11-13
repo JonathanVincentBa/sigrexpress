@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\PermissionRegistrar;
 
 class AdminUserSeeder extends Seeder
 {
@@ -18,15 +16,9 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(LegacyAccessControlSeeder::class);
+
         DB::transaction(function (): void {
-            $roles = collect(['Super Admin', 'Administrador', 'Usuario'])
-                ->map(fn (string $name): Role => Role::query()->firstOrCreate([
-                    'name' => $name,
-                    'guard_name' => 'web',
-                ]));
-
-            app(PermissionRegistrar::class)->forgetCachedPermissions();
-
             $adminEmail = Str::lower(trim((string) config('app.admin_email')));
             $adminPassword = (string) config('app.admin_password');
             $adminName = Str::upper(trim((string) config('app.admin_name', 'Jonathan Daniel Vincent Basantes')));
@@ -58,7 +50,7 @@ class AdminUserSeeder extends Seeder
                 $adminUser->forceFill(['email_verified_at' => now()])->save();
             }
 
-            $adminUser->assignRole($roles->firstWhere('name', 'Super Admin'));
+            $adminUser->assignRole('Super Admin');
         });
     }
 }

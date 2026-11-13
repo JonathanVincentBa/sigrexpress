@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use App\Models\Scopes\AssignedBranchScope;
 
 /**
  * @property int $id_cabecera
@@ -93,6 +94,11 @@ class Cabecera extends Model
     protected $table = 'cabecera';
 
     protected $primaryKey = 'id_cabecera';
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AssignedBranchScope);
+    }
 
     /**
      * @return array<string, string>

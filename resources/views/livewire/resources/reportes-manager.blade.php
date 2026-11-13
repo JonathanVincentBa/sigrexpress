@@ -42,12 +42,40 @@
                     </div>
                     <div class="field">
                         <label for="report-customer">Cliente</label>
-                        <x-searchable-select wire:model="cliente" id="report-customer" class="control">
-                            <option value="">Todos los clientes</option>
-                            @foreach ($customers as $customer)
-                                <option value="{{ $customer->id_persona }}">{{ $customer->nombre }} · {{ $customer->num_dni }}</option>
-                            @endforeach
-                        </x-searchable-select>
+                        @if ($selectedCustomer)
+                            <div class="control flex items-center justify-between gap-3">
+                                <span>{{ $selectedCustomer->nombre }} · {{ $selectedCustomer->num_dni }}</span>
+                                <button wire:click="clearCustomer" type="button" class="text-button">Todos los clientes</button>
+                            </div>
+                        @else
+                            <input
+                                wire:model.live.debounce.300ms="customerSearch"
+                                id="report-customer"
+                                type="search"
+                                class="control"
+                                maxlength="100"
+                                placeholder="Buscar por nombre o identificación"
+                                autocomplete="off"
+                            >
+                            @if (mb_strlen(trim($customerSearch)) >= 2)
+                                <div class="mt-2 grid gap-1">
+                                    @forelse ($customerResults as $customer)
+                                        <button
+                                            wire:key="report-customer-{{ $customer->id_persona }}"
+                                            wire:click="selectCustomer({{ $customer->id_persona }})"
+                                            type="button"
+                                            class="control text-left"
+                                        >
+                                            {{ $customer->nombre }} · {{ $customer->num_dni }}
+                                        </button>
+                                    @empty
+                                        <span class="muted">No se encontraron clientes activos.</span>
+                                    @endforelse
+                                </div>
+                            @else
+                                <span class="muted">Escribe al menos dos caracteres o deja vacío para incluir todos.</span>
+                            @endif
+                        @endif
                         @error('cliente') <span class="field-error">{{ $message }}</span> @enderror
                     </div>
                     <div class="field">

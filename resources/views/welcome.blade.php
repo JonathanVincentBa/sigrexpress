@@ -3,256 +3,181 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Transportes Jhetro') }} - Sistema de Guías de Remisión</title>
-    
-    <!-- Fuentes Google -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            dark: '#0b1a3e',   // Azul oscuro de Jhetro
-                            primary: '#174ea6',// Azul corporativo
-                            light: '#2563eb',  // Azul de acento
-                            bg: '#f0f4f8'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <meta name="theme-color" content="#10233f">
+    <title>{{ config('app.name', 'SIGRExpress') }} · Transporte Jhetro</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans antialiased text-slate-800 bg-slate-900 min-h-screen flex flex-col justify-between">
-
-    <div class="min-h-screen grid lg:grid-cols-12 w-full">
-        
-        <!-- SECCIÓN IZQUIERDA: HERO / IMAGEN Y MARCA (7 Columnas en escritorio) -->
-        <div class="lg:col-span-7 relative bg-brand-dark flex flex-col justify-between p-8 lg:p-12 overflow-hidden text-white min-h-[400px] lg:min-h-screen">
-            
-            <!-- Imagen de Fondo con Overlay -->
-            <div class="absolute inset-0 z-0 opacity-25 bg-cover bg-center" 
-                 style="background-image: url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1600&auto=format&fit=crop');">
-            </div>
-            
-            <!-- Degradado sobre la imagen para legibilidad -->
-            <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/80 to-transparent z-0"></div>
-
-            <!-- Cabecera / Marca -->
-            <div class="relative z-10 flex items-center gap-4">
-                <!-- Logotipo Ilustrado Jhetro -->
-                <div class="bg-white p-3 rounded-xl shadow-lg border border-white/20">
-                    <svg class="w-10 h-10 text-brand-dark" viewBox="0 0 100 100" fill="currentColor">
-                        <path d="M 10 35 L 55 35 L 55 20 L 90 30 L 90 65 L 80 65 A 10 10 0 0 1 60 65 L 40 65 A 10 10 0 0 1 20 65 L 10 65 Z" fill="#0b1a3e"/>
-                        <rect x="18" y="42" width="28" height="15" fill="#ffffff" rx="2"/>
-                        <circle cx="30" cy="65" r="7" fill="#ffffff"/>
-                        <circle cx="70" cy="65" r="7" fill="#ffffff"/>
-                        <text x="65" y="52" font-family="Arial, sans-serif" font-weight="900" font-size="22" fill="#ffffff">H</text>
-                        <path d="M 5 78 Q 50 72 95 85" stroke="#0b1a3e" stroke-width="4" fill="none"/>
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-black tracking-wider uppercase leading-none">JHETRO S.A.</h2>
-                    <p class="text-xs text-blue-300 font-semibold tracking-widest uppercase mt-1">Transporte de Carga Pesada</p>
-                </div>
-            </div>
-
-            <!-- Contenido Principal Hero -->
-            <div class="relative z-10 my-auto py-12">
-                <span class="inline-block px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-semibold rounded-full uppercase tracking-wider mb-4">
-                    Plataforma Operativa Interna
+<body class="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
+    <header class="relative z-10 border-b border-white/10 bg-[#10233f] text-white">
+        <nav class="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-5 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-10" aria-label="Navegación principal">
+            <a href="{{ route('home') }}" class="flex items-center gap-3" aria-label="Transporte Jhetro, inicio">
+                <span class="grid size-12 place-items-center rounded-2xl bg-blue-600 text-lg font-black tracking-tight shadow-lg shadow-blue-950/30">JH</span>
+                <span>
+                    <span class="block text-lg font-extrabold tracking-wide">TRANSPORTE JHETRO</span>
+                    <span class="block text-xs font-medium tracking-[0.18em] text-blue-200">LOGÍSTICA · SIGRExpress</span>
                 </span>
-                <h1 class="text-3xl lg:text-5xl font-extrabold leading-tight text-white mb-4">
-                    Gestión de Guías de Remisión y Logística
-                </h1>
-                <p class="text-slate-300 text-base lg:text-lg max-w-xl leading-relaxed mb-8">
-                    Sistema integral para el control de rutas, emisión de documentos electrónicos y seguimiento de flota a nivel nacional.
-                </p>
+            </a>
 
-                <!-- Tarjetas de Estadísticas -->
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-white/10">
-                    <div class="bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10">
-                        <p class="text-2xl lg:text-3xl font-extrabold text-blue-400">+350.000</p>
-                        <p class="text-xs text-slate-300 font-medium">Paquetes entregados</p>
-                    </div>
-                    <div class="bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10">
-                        <p class="text-2xl lg:text-3xl font-extrabold text-blue-400">2.9 - 10 Ton</p>
-                        <p class="text-xs text-slate-300 font-medium">Capacidad de flota</p>
-                    </div>
-                    <div class="bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10 col-span-2 md:col-span-1">
-                        <p class="text-2xl lg:text-3xl font-extrabold text-blue-400">+7 Años</p>
-                        <p class="text-xs text-slate-300 font-medium">De trayectoria</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pie de la Columna Izquierda -->
-            <div class="relative z-10 text-xs text-slate-400 border-t border-white/10 pt-4 flex flex-wrap justify-between gap-2">
-                <p>📍 Quito, Ibarra, Latacunga, Ambato, Riobamba, Cuenca y más.</p>
-                <p>© {{ date('Y') }} Transporte Jhetro S.A.</p>
-            </div>
-        </div>
-
-        <!-- SECCIÓN DERECHA: FORMULARIO DE ACCESO (5 Columnas en escritorio) -->
-        <div class="lg:col-span-5 bg-white flex flex-col justify-between p-8 lg:p-12">
-            
-            <div class="w-full max-w-md mx-auto my-auto">
-                
-                @auth
-                    <!-- Vista para usuario ya autenticado -->
-                    <div class="p-6 bg-blue-50 border border-blue-200 rounded-2xl text-center shadow-sm">
-                        <div class="w-14 h-14 bg-brand-primary/10 text-brand-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Sesión Activa</p>
-                        <h4 class="text-xl font-bold text-slate-900 mb-2">{{ auth()->user()->name }}</h4>
-                        <p class="text-slate-500 text-sm mb-6">{{ auth()->user()->email }}</p>
-
-                        <a href="{{ route('dashboard') }}" 
-                           class="w-full bg-brand-primary hover:bg-brand-dark text-white font-bold py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
-                            <span>Ir al Panel de Control</span>
-                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </a>
-                    </div>
-                @else
-                    <!-- Encabezado del Formulario -->
-                    <div class="mb-8">
-                        <h3 class="text-2xl font-bold text-slate-900">Iniciar Sesión</h3>
-                        <p class="text-slate-500 text-sm mt-1">Ingresa tus credenciales para acceder al sistema de guías.</p>
-                    </div>
-
-                    <!-- Alerta si hay un mensaje de estado -->
-                    @if (session('status'))
-                        <div class="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
-                    <!-- Formulario de Login -->
-                    <form method="POST" action="{{ route('login') }}" class="space-y-5">
-                        @csrf
-
-                        <!-- Correo Electrónico -->
-                        <div>
-                            <label for="email" class="block text-sm font-semibold text-slate-700 mb-1">
-                                Correo electrónico
-                            </label>
-                            <div class="relative">
-                                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
-                                       class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-all text-slate-800 text-sm outline-none pl-10"
-                                       placeholder="usuario@transportejhetro.com">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('email')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Contraseña -->
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label for="password" class="block text-sm font-semibold text-slate-700">
-                                    Contraseña
-                                </label>
-                                @if (Route::has('password.request'))
-                                    <a href="{{ route('password.request') }}" class="text-xs font-semibold text-brand-primary hover:underline">
-                                        ¿Olvidaste tu contraseña?
-                                    </a>
-                                @endif
-                            </div>
-                            <div class="relative">
-                                <input id="password" type="password" name="password" required
-                                       class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-all text-slate-800 text-sm outline-none pl-10"
-                                       placeholder="••••••••">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('password')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Recordarme -->
-                        <div class="flex items-center">
-                            <input id="remember_me" type="checkbox" name="remember" 
-                                   class="h-4 w-4 text-brand-primary focus:ring-brand-primary border-slate-300 rounded cursor-pointer">
-                            <label for="remember_me" class="ml-2 block text-sm text-slate-600 cursor-pointer">
-                                Recordar mi sesión
-                            </label>
-                        </div>
-
-                        <!-- Botón de Ingreso -->
-                        <button type="submit" 
-                                class="w-full bg-brand-primary hover:bg-brand-dark text-white font-bold py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group">
-                            <span>Ingresar al Sistema</span>
-                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </button>
-                    </form>
-
-                    <!-- Nota Informativa de Seguridad -->
-                    <div class="mt-8 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-start gap-2">
-                        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <p>Acceso restringido únicamente para personal y choferes autorizados de Transporte Jhetro S.A.</p>
-                    </div>
-                @endauth
-
-                <a href="{{ route('tracking.guia') }}" class="mt-5 flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-brand-primary transition hover:border-blue-300 hover:bg-blue-100">
-                    <span>Consultar estado de mi guía</span>
-                    <span aria-hidden="true">→</span>
+            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:justify-end">
+                <a href="{{ route('tracking.guia') }}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold text-white transition hover:border-blue-300 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300">
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5h11.25a2.25 2.25 0 0 1 2.25 2.25v7.5H5.25A2.25 2.25 0 0 1 3 15V7.5Zm13.5 4.5h2.25l2.25 2.25v3h-4.5V12ZM7.5 19.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10.5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/>
+                    </svg>
+                    Consultar Guía
                 </a>
 
+                @guest
+                    <a href="{{ route('login') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-950/20 transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300">
+                        Iniciar Sesión
+                    </a>
+                @endguest
+
+                @auth
+                    <a href="{{ route('dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-950/20 transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300">
+                        Ir al Sistema
+                    </a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold text-blue-100 transition hover:border-white/40 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 sm:w-auto">
+                            Cerrar Sesión
+                        </button>
+                    </form>
+                @endauth
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="relative isolate overflow-hidden bg-[#10233f] text-white">
+            <div class="absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+                <div class="absolute -right-32 -top-40 size-[30rem] rounded-full bg-blue-500/20 blur-3xl"></div>
+                <div class="absolute -bottom-48 left-1/4 size-[34rem] rounded-full bg-cyan-400/10 blur-3xl"></div>
+                <div class="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.035)_50%,transparent_50%)]"></div>
             </div>
 
-            <!-- Pie de página con contacto directo (Soporte Técnico y WhatsApp) -->
-            <div class="mt-8 pt-6 border-t border-slate-100 text-center text-xs text-slate-500 space-y-2">
-                <p>¿Problemas de acceso o soporte del sistema?</p>
-                <div class="flex justify-center items-center gap-4 text-slate-700 font-medium flex-wrap">
-                    <!-- Soporte Técnico / Creador -->
-                    <a href="tel:+593995789977" class="hover:text-brand-primary flex items-center gap-1">
-                        <svg class="w-4 h-4 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                        </svg>
-                        Soporte Técnico: +593 99 578 9977
-                    </a>
-                    <span>•</span>
-                    <!-- WhatsApp Comercial -->
-                    <a href="https://wa.me/593987723116" target="_blank" class="hover:text-green-600 flex items-center gap-1">
-                        <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
-                        </svg>
-                        WhatsApp: +593 98 772 3116
-                    </a>
+            <div class="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-28">
+                <div>
+                    <p class="inline-flex items-center gap-2 rounded-full border border-blue-300/25 bg-blue-300/10 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
+                        <span class="size-2 rounded-full bg-emerald-400"></span>
+                        Transporte y logística confiable
+                    </p>
+                    <h1 class="mt-6 max-w-3xl text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+                        Conectamos tus envíos con su próximo destino.
+                    </h1>
+                    <p class="mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
+                        Transporte Jhetro brinda soluciones de carga y distribución con seguimiento de guías y coordinación operativa desde SIGRExpress.
+                    </p>
+                    <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                        <a href="{{ route('tracking.guia') }}" class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-500 px-6 py-3 text-sm font-extrabold text-white shadow-xl shadow-blue-950/30 transition hover:bg-blue-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                            Consultar estado de mi guía
+                            <span aria-hidden="true">→</span>
+                        </a>
+                        @guest
+                            <a href="{{ route('login') }}" class="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                                Acceso al sistema
+                            </a>
+                        @endguest
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                                Abrir SIGRExpress
+                            </a>
+                        @endauth
+                    </div>
+                    <div class="mt-10 flex flex-wrap gap-x-7 gap-y-3 border-t border-white/10 pt-6 text-sm text-slate-300">
+                        <span class="inline-flex items-center gap-2"><span class="text-blue-300">✓</span> Gestión de guías</span>
+                        <span class="inline-flex items-center gap-2"><span class="text-blue-300">✓</span> Coordinación de rutas</span>
+                        <span class="inline-flex items-center gap-2"><span class="text-blue-300">✓</span> Seguimiento de envíos</span>
+                    </div>
+                </div>
+
+                <div class="relative mx-auto w-full max-w-xl">
+                    <div class="absolute -inset-4 rounded-[2rem] bg-blue-400/10 blur-2xl" aria-hidden="true"></div>
+                    <div class="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-white/[0.07] p-5 shadow-2xl shadow-slate-950/30 backdrop-blur sm:p-7">
+                        <div class="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Operación conectada</p>
+                                <h2 class="mt-2 text-xl font-bold sm:text-2xl">Cada envío, bajo control</h2>
+                            </div>
+                            <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-blue-500/20 text-blue-200">
+                                <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5h11.25a2.25 2.25 0 0 1 2.25 2.25v7.5H5.25A2.25 2.25 0 0 1 3 15V7.5Zm13.5 4.5h2.25l2.25 2.25v3h-4.5V12ZM7.5 19.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10.5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/>
+                                </svg>
+                            </span>
+                        </div>
+
+                        <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                            <article class="rounded-2xl border border-white/10 bg-slate-950/20 p-5">
+                                <span class="grid size-10 place-items-center rounded-xl bg-blue-400/15 text-blue-200">
+                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m6.375 2.25a9.375 9.375 0 1 1-18.75 0 9.375 9.375 0 0 1 18.75 0Z"/>
+                                    </svg>
+                                </span>
+                                <h3 class="mt-4 font-bold">Control de guías</h3>
+                                <p class="mt-2 text-sm leading-6 text-slate-300">Emisión y consulta de información operativa de tus envíos.</p>
+                            </article>
+                            <article class="rounded-2xl border border-white/10 bg-slate-950/20 p-5">
+                                <span class="grid size-10 place-items-center rounded-xl bg-cyan-300/15 text-cyan-200">
+                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7.5-4.5 7.5-11.25a7.5 7.5 0 1 0-15 0C4.5 16.5 12 21 12 21Zm0-8.25a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                                    </svg>
+                                </span>
+                                <h3 class="mt-4 font-bold">Cobertura coordinada</h3>
+                                <p class="mt-2 text-sm leading-6 text-slate-300">Operación conectada con agencias y destinos de Ecuador.</p>
+                            </article>
+                        </div>
+
+                        <a href="{{ route('tracking.guia') }}" class="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-blue-300/20 bg-blue-500/10 px-5 py-4 transition hover:bg-blue-500/20">
+                            <span>
+                                <span class="block text-sm font-bold">¿Ya tienes tu número de guía?</span>
+                                <span class="mt-1 block text-xs text-blue-100">Consulta el estado de tu envío en línea.</span>
+                            </span>
+                            <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-400 text-lg font-bold text-white" aria-hidden="true">→</span>
+                        </a>
+                    </div>
+                    <p class="relative mt-4 text-center text-xs text-slate-400">SIGRExpress · Plataforma de gestión de Transporte Jhetro</p>
                 </div>
             </div>
+        </section>
 
+        <section class="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-16 lg:px-10">
+            <div class="max-w-2xl">
+                <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-blue-700">Servicios</p>
+                <h2 class="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Logística clara en cada etapa</h2>
+                <p class="mt-4 text-base leading-7 text-slate-600">Una operación organizada ayuda a mantener la información del envío accesible para el equipo y para quienes esperan su carga.</p>
+            </div>
+
+            <div class="mt-9 grid gap-5 md:grid-cols-3">
+                <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p class="text-sm font-extrabold text-blue-700">01 · DOCUMENTACIÓN</p>
+                    <h3 class="mt-3 text-lg font-bold text-slate-900">Guías de remisión</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">Registro y administración de la información relacionada con cada envío.</p>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p class="text-sm font-extrabold text-blue-700">02 · DISTRIBUCIÓN</p>
+                    <h3 class="mt-3 text-lg font-bold text-slate-900">Coordinación operativa</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">Herramientas para organizar sucursales, rutas, vehículos y manifiestos.</p>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p class="text-sm font-extrabold text-blue-700">03 · VISIBILIDAD</p>
+                    <h3 class="mt-3 text-lg font-bold text-slate-900">Consulta de envíos</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">Acceso al seguimiento público con los datos requeridos para proteger la consulta.</p>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-[#10233f] text-slate-300">
+        <div class="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
+            <div>
+                <p class="font-bold text-white">Transporte Jhetro</p>
+                <p class="mt-1 text-sm">SIGRExpress · Gestión de transporte y logística</p>
+            </div>
+            <div class="flex flex-col gap-3 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
+                <a href="tel:+593995789977" class="transition hover:text-white">Soporte: +593 99 578 9977</a>
+                <a href="https://wa.me/593987723116" target="_blank" rel="noopener noreferrer" class="transition hover:text-white">WhatsApp: +593 98 772 3116</a>
+                <span class="text-slate-400">© {{ date('Y') }} Transporte Jhetro S.A.</span>
+            </div>
         </div>
-
-    </div>
-
-    @include('sweetalert::alert')
+    </footer>
 </body>
 </html>

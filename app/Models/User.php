@@ -18,6 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
 /**
  * @property int $id
  * @property int|null $id_persona
+ * @property int|null $id_sucursal
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at
@@ -30,7 +31,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'id_persona', 'estado'])]
+#[Fillable(['name', 'email', 'password', 'id_persona', 'id_sucursal', 'estado'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -68,6 +69,24 @@ class User extends Authenticatable implements MustVerifyEmail
     public function persona(): BelongsTo
     {
         return $this->belongsTo(Persona::class, 'id_persona', 'id_persona');
+    }
+
+    /**
+     * @return BelongsTo<Sucursal, $this>
+     */
+    public function sucursal(): BelongsTo
+    {
+        return $this->belongsTo(Sucursal::class, 'id_sucursal', 'id_sucursal');
+    }
+
+    public function isBranchRestricted(): bool
+    {
+        return $this->hasAnyRole(['Secretaria', 'Chofer']);
+    }
+
+    public function isAdministrator(): bool
+    {
+        return $this->hasAnyRole(['Super Admin', 'Administrador']);
     }
 
     /**

@@ -11,6 +11,16 @@ use Spatie\Permission\Models\Role;
 class LegacySqlImportSeeder extends Seeder
 {
     /**
+     * @var array<string, string>
+     */
+    private const LEGACY_ROLE_NAMES = [
+        '1' => 'Administrador',
+        '2' => 'Secretaria',
+        '3' => 'Chofer',
+        '4' => 'CLIENTE',
+    ];
+
+    /**
      * Import the legacy catalogs and operational data without replacing local records.
      */
     public function run(): void
@@ -45,6 +55,7 @@ class LegacySqlImportSeeder extends Seeder
         $reader = app(LegacySqlDumpReader::class);
         $chunkSize = max(1, (int) config('legacy-import.chunk_size', 500));
 
+        $this->call(LegacyAccessControlSeeder::class);
         $this->importRoles($reader, $files['rol'], $chunkSize);
 
         foreach (['empresa', 'cargo', 'ciudad', 'formas_pago', 'motivo_traslado', 'sucursal'] as $sourceTable) {
@@ -159,10 +170,10 @@ class LegacySqlImportSeeder extends Seeder
                 }
 
                 $seenIds[$sourceId] = true;
-                $name = mb_strtoupper(trim((string) ($row['descripcion'] ?? '')));
+                $name = self::LEGACY_ROLE_NAMES[(string) $sourceId] ?? null;
 
-                if ($name === '') {
-                    throw new RuntimeException("El rol heredado {$sourceId} no tiene nombre.");
+                if ($name === null) {
+                    throw new RuntimeException("El id_rol {$sourceId} no tiene un rol Spatie oficial definido.");
                 }
 
                 $checksum = hash('sha256', serialize($row));

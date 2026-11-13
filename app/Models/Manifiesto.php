@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Scopes\AssignedBranchScope;
 
 #[Fillable([
     'codigo',
+    'id_sucursal',
     'id_vehiculo',
     'id_chofer',
     'id_usuario',
@@ -22,6 +24,11 @@ class Manifiesto extends Model
     protected $table = 'manifiestos';
 
     protected $primaryKey = 'id_manifiesto';
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AssignedBranchScope);
+    }
 
     /**
      * @return array<string, string>

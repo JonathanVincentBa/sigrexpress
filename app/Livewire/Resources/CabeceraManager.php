@@ -242,6 +242,18 @@ class CabeceraManager extends Component
 
         DB::transaction(function () use ($validated): void {
             $guideData = $validated['formData'];
+
+            if (auth()->user()?->isBranchRestricted()) {
+                $assignedBranch = (int) auth()->user()->id_sucursal;
+                $submittedBranch = ! empty($guideData['id_sucursal']) ? (int) $guideData['id_sucursal'] : null;
+
+                if ($submittedBranch !== null && $submittedBranch !== $assignedBranch) {
+                    abort(403, 'No tienes autorización para operar en una sucursal distinta a la asignada.');
+                }
+
+                $guideData['id_sucursal'] = $assignedBranch;
+            }
+
             foreach (['fecha_recepcion', 'fecha_cancelacion'] as $dateField) {
                 $guideData[$dateField] = $guideData[$dateField] ?: null;
             }
@@ -252,9 +264,16 @@ class CabeceraManager extends Component
             $guideData['id_users'] = auth()->id();
             $guideData['id_users_update'] = $this->isEditing ? auth()->id() : null;
 
-            $guide = $this->isEditing
-                ? Cabecera::query()->findOrFail($this->selectedId)
-                : new Cabecera;
+            if ($this->isEditing) {
+                $guide = Cabecera::query()->findOrFail($this->selectedId);
+
+                if (auth()->user()?->isBranchRestricted() && (int) $guide->id_sucursal !== (int) auth()->user()->id_sucursal) {
+                    abort(403, 'No tienes autorización para modificar guías de otra sucursal.');
+                }
+            } else {
+                $guide = new Cabecera;
+            }
+
             $guide->fill($guideData);
             $guide->save();
 
@@ -290,6 +309,11 @@ class CabeceraManager extends Component
     public function prepareDelete(int $id): void
     {
         $guide = Cabecera::query()->findOrFail($id);
+
+        if (auth()->user()?->isBranchRestricted() && (int) $guide->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para eliminar guías de otra sucursal.');
+        }
+
         $this->deleteId = $id;
         $this->deleteLabel = (string) $guide->num_guia;
         $this->showDeleteModal = true;
@@ -303,7 +327,13 @@ class CabeceraManager extends Component
             return;
         }
 
-        Cabecera::query()->findOrFail($this->deleteId)->delete();
+        $guide = Cabecera::query()->findOrFail($this->deleteId);
+
+        if (auth()->user()?->isBranchRestricted() && (int) $guide->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para eliminar guías de otra sucursal.');
+        }
+
+        $guide->delete();
         $this->showDeleteModal = false;
         $this->deleteId = null;
         $this->deleteLabel = '';
@@ -349,9 +379,12 @@ class CabeceraManager extends Component
     private function defaultFormData(): array
     {
         $nextNumber = ((int) Cabecera::withTrashed()->max('num_guia')) + 1;
+        $defaultBranchId = auth()->user()?->isBranchRestricted()
+            ? (string) auth()->user()->id_sucursal
+            : '';
 
         return [
-            'id_sucursal' => '',
+            'id_sucursal' => $defaultBranchId,
             'id_motivo_traslado' => '',
             'id_forma_pago' => '',
             'id_persona' => '',
@@ -402,6 +435,10 @@ class CabeceraManager extends Component
         $guide = Cabecera::query()
             ->with(['persona' => fn ($query) => $query->withTrashed(), 'detalles'])
             ->findOrFail($id);
+
+        if (auth()->user()?->isBranchRestricted() && (int) $guide->id_sucursal !== (int) auth()->user()->id_sucursal) {
+            abort(403, 'No tienes autorización para acceder a una guía de otra sucursal.');
+        }
         $this->selectedId = $guide->id_cabecera;
         $this->formData = $guide->only(array_keys($this->defaultFormData()));
         $this->formData['fecha_emision'] = $guide->fecha_emision->format('Y-m-d\TH:i');

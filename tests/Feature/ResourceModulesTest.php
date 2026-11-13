@@ -1,10 +1,13 @@
 <?php
 
+use App\Livewire\DashboardManager;
 use App\Livewire\Resources\CabeceraManager;
 use App\Livewire\Resources\CiudadManager;
+use App\Livewire\Resources\DetalleManager;
 use App\Livewire\Resources\EmpresaManager;
 use App\Livewire\Resources\GuiaEstadoManager;
 use App\Livewire\Resources\ManifiestoManager;
+use App\Livewire\Resources\ReportesManager;
 use App\Livewire\Resources\SucursalManager;
 use App\Livewire\Resources\UserManager;
 use App\Models\Cabecera;
@@ -21,7 +24,9 @@ use App\Models\Vehiculo;
 use Database\Seeders\AdminUserSeeder;
 use Database\Seeders\NormalizeLegacyBranchCitySeeder;
 use Database\Seeders\OperationalDemoSeeder;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -66,6 +71,36 @@ function createGuideReferences(): array
     ]);
 
     return [$branch, $reason, $payment, $city, $company, $cargo, $person];
+}
+
+function createGuideRecord(
+    User $user,
+    Sucursal $branch,
+    MotivoTraslado $reason,
+    FormasPago $payment,
+    Ciudad $city,
+    Persona $person,
+    array $attributes = [],
+): Cabecera {
+    return Cabecera::query()->create(array_replace([
+        'id_sucursal' => $branch->id_sucursal,
+        'id_motivo_traslado' => $reason->id_motivo_traslado,
+        'id_forma_pago' => $payment->id_formas_pago,
+        'id_users' => $user->id,
+        'id_persona' => $person->id_persona,
+        'ciudad_origen' => $city->descripcion,
+        'ciudad_destino' => $city->descripcion,
+        'nom_remitente' => $person->nombre,
+        'dni_remitente' => $person->num_dni,
+        'direccion_remitente' => $person->direccion,
+        'fono_remitente' => $person->telefono,
+        'nom_destinatario' => 'Destinatario de Prueba',
+        'num_guia' => 987654321,
+        'num_guia_trans' => 987654321,
+        'fecha_emision' => now(),
+        'flete' => 1,
+        'valor_guia' => 1,
+    ], $attributes));
 }
 
 it('requires authentication for every resource module', function () {
@@ -202,7 +237,7 @@ it('normalizes legacy branch labels and preserves their branch data', function (
     $this->assertDatabaseMissing('ciudad', ['id_ciudad' => $duplicateManta->id_ciudad]);
     $this->assertDatabaseHas('sucursal', [
         'id_empresa' => $company->id_empresa,
-        'id_ciudad' => $versalles->id_ciudad,
+        'id_ciudad' => $city->id_ciudad,
         'nombre' => 'Bodega Versalles',
         'direccion' => '',
         'telefono' => '',
@@ -279,6 +314,119 @@ it('creates a user and assigns its selected role', function () {
     expect($user->hasRole($role))->toBeTrue()
         ->and($user->name)->toBe('USUARIO OPERADOR')
         ->and($user->email)->toBe('operador@example.test');
+});
+
+it('searches and selects a linked person when creating a user', function () {
+    $this->actingAs(User::factory()->create());
+    [, , , , , , $person] = createGuideReferences();
+
+    Livewire::test(UserManager::class)
+        ->call('create')
+        ->assertDontSee('Cliente de Prueba')
+        ->set('personaSearch', 'Cliente de')
+        ->assertSee('Cliente de Prueba')
+        ->call('selectPersona', $person->id_persona)
+        ->assertSet('id_persona', (string) $person->id_persona)
+        ->set('name', 'Usuario con Persona')
+        ->set('email', 'persona@example.test')
+        ->set('password', 'password-segura')
+        ->set('password_confirmation', 'password-segura')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'persona@example.test',
+        'id_persona' => $person->id_persona,
+    ]);
+});
+
+it('searches and selects a guide without loading the complete guide list', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    [$branch, $reason, $payment, $city, , , $person] = createGuideReferences();
+    $guide = createGuideRecord($user, $branch, $reason, $payment, $city, $person, [
+        'nom_destinatario' => 'Destinatario para detalle',
+    ]);
+
+    $cabeceraQueries = 0;
+    DB::listen(function (QueryExecuted $query) use (&$cabeceraQueries): void {
+        if (str_starts_with(strtolower($query->sql), 'select') && str_contains($query->sql, 'cabecera')) {
+            $cabeceraQueries++;
+        }
+    });
+
+    $component = Livewire::test(DetalleManager::class)
+        ->call('create')
+        ->assertDontSee('987654321')
+        ->assertSet('showModal', true);
+
+    expect($cabeceraQueries)->toBe(0);
+
+    $component
+        ->set('guideSearch', '987654321')
+        ->assertSee('Destinatario para detalle');
+
+    expect($cabeceraQueries)->toBe(1);
+
+    $component
+        ->call('selectGuide', $guide->id_cabecera)
+        ->assertSet('id_cabecera', (string) $guide->id_cabecera)
+        ->set('descripcion', 'Caja de prueba')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertSet('showModal', false);
+
+    $this->assertDatabaseHas('detalle', [
+        'id_cabecera' => $guide->id_cabecera,
+        'descripcion' => 'CAJA DE PRUEBA',
+    ]);
+});
+
+it('aggregates dashboard guide metrics without separate full-table sums per month', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    [$branch, $reason, $payment, $city, , , $person] = createGuideReferences();
+    createGuideRecord($user, $branch, $reason, $payment, $city, $person, [
+        'num_guia' => 987654322,
+        'num_guia_trans' => 987654322,
+        'valor_guia' => 15.25,
+        'estatus_cobro' => 'Pendiente',
+    ]);
+
+    $cabeceraQueries = 0;
+    DB::listen(function (QueryExecuted $query) use (&$cabeceraQueries): void {
+        if (str_starts_with(strtolower($query->sql), 'select') && str_contains($query->sql, 'cabecera')) {
+            $cabeceraQueries++;
+        }
+    });
+
+    $component = Livewire::test(DashboardManager::class);
+
+    expect($cabeceraQueries)->toBe(2);
+    expect($component->viewData('metrics'))->toMatchArray([
+        'guias' => 1,
+        'ingresos' => 15.25,
+        'pendiente' => 15.25,
+    ]);
+    expect($component->viewData('monthly')[5])->toMatchArray([
+        'count' => 1,
+        'revenue' => 15.25,
+    ]);
+    expect((float) $component->viewData('branchCosts')->sole()->total)->toBe(15.25)
+        ->and((float) $component->viewData('historicalBranchValues')->sole()->total)->toBe(15.25);
+});
+
+it('searches for report customers on demand', function () {
+    $this->actingAs(User::factory()->create());
+    [, , , , , , $person] = createGuideReferences();
+
+    Livewire::test(ReportesManager::class)
+        ->assertDontSee('Cliente de Prueba')
+        ->set('customerSearch', 'Cliente de')
+        ->assertSee('Cliente de Prueba')
+        ->call('selectCustomer', $person->id_persona)
+        ->assertSet('cliente', (string) $person->id_persona)
+        ->assertSee('Cliente de Prueba');
 });
 
 it('saves a guide and calculates each detail line and guide charge', function () {

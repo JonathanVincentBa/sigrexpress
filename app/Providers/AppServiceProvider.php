@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -24,6 +27,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureAuthSession();
+    }
+
+    protected function configureAuthSession(): void
+    {
+        Event::listen(Login::class, function (Login $event): void {
+            if ($event->user && isset($event->user->id_sucursal) && $event->user->id_sucursal !== null) {
+                session(['id_sucursal' => $event->user->id_sucursal]);
+            }
+        });
+
+        Event::listen(Logout::class, function (): void {
+            session()->forget('id_sucursal');
+        });
     }
 
     /**

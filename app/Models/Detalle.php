@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use App\Models\Scopes\AssignedBranchScope;
 
 /**
  * @property int $id_detalle
@@ -35,6 +36,11 @@ class Detalle extends Model
 
     protected $primaryKey = 'id_detalle';
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AssignedBranchScope);
+    }
+
     /**
      * @return array<string, string>
      */
@@ -55,4 +61,3 @@ class Detalle extends Model
         return $this->belongsTo(Cabecera::class, 'id_cabecera', 'id_cabecera');
     }
 }
-
