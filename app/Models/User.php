@@ -72,6 +72,8 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Sucursal asignada al usuario.
+     *
      * @return BelongsTo<Sucursal, $this>
      */
     public function sucursal(): BelongsTo
@@ -81,7 +83,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isBranchRestricted(): bool
     {
-        return $this->hasAnyRole(['Secretaria', 'Chofer']);
+        // Es restringido si tiene una sucursal asignada y NO es Administrador o Super Admin
+        return !empty($this->id_sucursal) && !$this->hasAnyRole(['Super Admin', 'Administrador']);
     }
 
     public function isAdministrator(): bool

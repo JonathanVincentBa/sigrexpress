@@ -3,7 +3,7 @@
         <div>
             <p class="eyebrow">Seguridad</p>
             <h1>Usuarios</h1>
-            <p class="muted">Administra las cuentas, su estado, el personal vinculado y los roles asignados.</p>
+            <p class="muted">Administra las cuentas, su estado, el personal vinculado, su sucursal y los roles asignados.</p>
         </div>
         <button wire:click="create" class="button primary" type="button">+ Nuevo usuario</button>
     </div>
@@ -25,6 +25,12 @@
                         <option value="{{ $role->id }}">{{ $role->name }}</option>
                     @endforeach
                 </x-searchable-select>
+                <x-searchable-select wire:model.live="branchFilter" class="control" aria-label="Filtrar usuarios por sucursal">
+                    <option value="">Todas las sucursales</option>
+                    @foreach ($availableSucursales as $sucursal)
+                        <option value="{{ $sucursal->id_sucursal }}">{{ $sucursal->nombre }}</option>
+                    @endforeach
+                </x-searchable-select>
                 <span>Total: <strong>{{ $users->total() }}</strong></span>
             </div>
         </div>
@@ -32,13 +38,21 @@
         <div class="table-wrap">
             <table>
                 <thead>
-                    <tr><th>Usuario</th><th>Personal vinculado</th><th>Roles</th><th>Estado</th><th class="actions-heading">Acciones</th></tr>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Personal vinculado</th>
+                        <th>Sucursal</th>
+                        <th>Roles</th>
+                        <th>Estado</th>
+                        <th class="actions-heading">Acciones</th>
+                    </tr>
                 </thead>
                 <tbody>
                     @forelse ($users as $user)
                         <tr wire:key="user-{{ $user->id }}">
                             <td><strong>{{ $user->name }}</strong><span style="display:block; color:#77849a;">{{ $user->email }}</span></td>
                             <td>{{ $user->persona?->nombre ?? '—' }}</td>
+                            <td>{{ $user->sucursal?->nombre ?? 'Sin sucursal' }}</td>
                             <td>{{ $user->roles->pluck('name')->join(', ') ?: 'Sin roles' }}</td>
                             <td><span class="badge {{ $user->estado === '1' ? 'active' : '' }}">{{ $user->estado === '1' ? 'Activo' : 'Inactivo' }}</span></td>
                             <td>
@@ -50,7 +64,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5"><div class="empty-state"><strong>No se encontraron usuarios</strong><span>Ajusta los filtros o crea una cuenta nueva.</span></div></td></tr>
+                        <tr><td colspan="6"><div class="empty-state"><strong>No se encontraron usuarios</strong><span>Ajusta los filtros o crea una cuenta nueva.</span></div></td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -133,6 +147,16 @@
                                     <option value="0">Inactivo</option>
                                 </x-searchable-select>
                                 @error('estado') <span class="field-error">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="field field-wide">
+                                <label for="user-branch">Sucursal asignada</label>
+                                <x-searchable-select wire:model="id_sucursal" id="user-branch" class="control" @disabled($isViewing)>
+                                    <option value="">Seleccione una sucursal</option>
+                                    @foreach ($availableSucursales as $sucursal)
+                                        <option value="{{ $sucursal->id_sucursal }}">{{ $sucursal->nombre }}</option>
+                                    @endforeach
+                                </x-searchable-select>
+                                @error('id_sucursal') <span class="field-error">{{ $message }}</span> @enderror
                             </div>
                             @unless ($isViewing)
                                 <div class="field">

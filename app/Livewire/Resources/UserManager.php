@@ -5,6 +5,7 @@ namespace App\Livewire\Resources;
 use App\Concerns\NormalizesTextInput;
 use App\Concerns\WithSweetAlert;
 use App\Models\Persona;
+use App\Models\Sucursal;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -25,6 +26,8 @@ class UserManager extends Component
 
     public string $roleFilter = '';
 
+    public string $branchFilter = '';
+
     public string $name = '';
 
     public string $email = '';
@@ -36,6 +39,8 @@ class UserManager extends Component
     public string $id_persona = '';
 
     public string $personaSearch = '';
+
+    public string $id_sucursal = '';
 
     public string $estado = '1';
 
@@ -67,6 +72,11 @@ class UserManager extends Component
     }
 
     public function updatedRoleFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedBranchFilter(): void
     {
         $this->resetPage();
     }
@@ -106,6 +116,7 @@ class UserManager extends Component
         $this->email = $user->email;
         $this->id_persona = (string) ($user->id_persona ?? '');
         $this->personaSearch = '';
+        $this->id_sucursal = (string) ($user->id_sucursal ?? '');
         $this->estado = $user->estado;
         $this->roles = $user->roles->pluck('id')->all();
         $this->password = '';
@@ -128,17 +139,20 @@ class UserManager extends Component
             'name' => $this->name,
             'email' => $this->email,
             'id_persona' => $this->id_persona,
+            'id_sucursal' => $this->id_sucursal,
             'estado' => $this->estado,
         ]);
         $this->name = $normalized['name'];
         $this->email = $normalized['email'];
         $this->id_persona = $normalized['id_persona'];
+        $this->id_sucursal = $normalized['id_sucursal'];
         $this->estado = $normalized['estado'];
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->selectedId)],
             'id_persona' => ['nullable', 'integer', 'exists:persona,id_persona'],
+            'id_sucursal' => ['nullable', 'integer', 'exists:sucursal,id_sucursal'],
             'estado' => ['required', 'in:0,1'],
             'roles' => ['array'],
             'roles.*' => ['integer', Rule::exists('roles', 'id')->where('guard_name', 'web')],
@@ -162,6 +176,7 @@ class UserManager extends Component
             'name' => $validated['name'],
             'email' => $validated['email'],
             'id_persona' => $validated['id_persona'] ?: null,
+            'id_sucursal' => $validated['id_sucursal'] ?: null,
             'estado' => $validated['estado'],
         ];
 
@@ -225,7 +240,7 @@ class UserManager extends Component
     public function render()
     {
         $users = User::query()
-            ->with(['persona', 'roles'])
+            ->with(['persona', 'roles', 'sucursal'])
             ->when($this->search !== '', function ($query): void {
                 $search = trim($this->search);
                 $query->where(function ($query) use ($search): void {
@@ -236,6 +251,7 @@ class UserManager extends Component
             })
             ->when($this->statusFilter !== '', fn ($query) => $query->where('estado', $this->statusFilter))
             ->when($this->roleFilter !== '', fn ($query) => $query->whereHas('roles', fn ($roleQuery) => $roleQuery->whereKey($this->roleFilter)))
+            ->when($this->branchFilter !== '', fn ($query) => $query->where('id_sucursal', $this->branchFilter))
             ->latest('id')
             ->paginate(10);
 
@@ -258,6 +274,10 @@ class UserManager extends Component
                     ->get(['id_persona', 'nombre', 'num_dni'])
                 : collect(),
             'availableRoles' => Role::query()->where('guard_name', 'web')->orderBy('name')->get(['id', 'name']),
+            'availableSucursales' => Sucursal::query()
+                ->where('estado', '1')
+                ->orderBy('nombre')
+                ->get(['id_sucursal', 'nombre']),
         ]);
     }
 
@@ -270,6 +290,7 @@ class UserManager extends Component
             'password_confirmation',
             'id_persona',
             'personaSearch',
+            'id_sucursal',
             'selectedId',
             'roles',
         ]);

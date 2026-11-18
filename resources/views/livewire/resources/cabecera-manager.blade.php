@@ -55,51 +55,65 @@
             $itemsAmount = collect($detalles)->sum(fn ($detail) => (int) ($detail['cantidad'] ?? 0) * (float) ($detail['v_unitario'] ?? 0));
         @endphp
         <div class="resource-modal-backdrop">
-            <section class="resource-modal resource-modal-lg" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
-                <header class="resource-modal-header">
-                    <div>
-                        <p class="eyebrow">{{ $isViewing ? 'Consulta' : ($isEditing ? 'Modificación' : 'Nueva operación') }}</p>
-                        <h2 id="guide-modal-title">{{ $isViewing ? 'Detalle de guía' : ($isEditing ? 'Editar guía' : 'Registrar guía') }}</h2>
+            <section class="resource-modal" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title" style="width: min(96vw, 1350px); height: 92vh; max-height: 95vh; display: flex; flex-direction: column; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+                
+                <!-- HEADER MODERNO -->
+                <header class="resource-modal-header" style="background: #f8fafc; padding: 20px 28px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; font-weight: 700; font-size: 18px;">
+                            📄
+                        </div>
+                        <div>
+                            <span class="eyebrow" style="color: #0284c7; font-weight: 700; letter-spacing: 0.05em; font-size: 11px; text-transform: uppercase;">{{ $isViewing ? 'Consulta de Operación' : ($isEditing ? 'Modificación de Registro' : 'Nueva Emisión') }}</span>
+                            <h2 id="guide-modal-title" style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0;">{{ $isViewing ? 'Detalle de Guía de Remisión' : ($isEditing ? 'Editar Guía de Remisión' : 'Registrar Nueva Guía de Remisión') }}</h2>
+                        </div>
                     </div>
-                    <button wire:click="$set('showModal', false)" class="close-btn" type="button" aria-label="Cerrar">×</button>
+                    <button wire:click="$set('showModal', false)" class="close-btn" type="button" aria-label="Cerrar" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 20px; cursor: pointer; display: grid; place-items: center; transition: all 0.2s;">×</button>
                 </header>
 
-                <form wire:submit="save">
-                    <div class="resource-modal-body">
-                        <section>
-                            <p class="eyebrow">Cabecera</p>
-                            <div class="form-grid form-grid-3">
+                <form wire:submit="save" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                    
+                    <!-- CUERPO CON SCROLL ORGANIZADO EN GRID / TARJETAS -->
+                    <div class="resource-modal-body" style="flex: 1; overflow-y: auto; padding: 28px; background: #f1f5f9; display: grid; gap: 24px;">
+                        
+                       <!-- SECCIÓN 1: DATOS GENERALES DE CABECERA -->
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                                <span style="font-size: 16px;">📌</span>
+                                <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.03em;">1. Información General de la Guía</h3>
+                            </div>
+                            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                                 <div class="field">
-                                    <label for="guide-number">N.º de guía *</label>
-                                    <input wire:model="formData.num_guia" id="guide-number" type="number" class="control" readonly>
+                                    <label for="guide-number" style="font-weight: 600; color: #475569;">N.º de guía *</label>
+                                    <input wire:model="formData.num_guia" id="guide-number" type="number" class="control" readonly style="background: #f8fafc; font-weight: 700; color: #0f172a;">
                                     @error('formData.num_guia') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-transport-number">N.º guía de transporte *</label>
+                                    <label for="guide-transport-number" style="font-weight: 600; color: #475569;">N.º guía de transporte *</label>
                                     <input wire:model="formData.num_guia_trans" id="guide-transport-number" type="number" class="control" min="0" @disabled($isViewing)>
                                     @error('formData.num_guia_trans') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-date">Fecha de emisión *</label>
+                                    <label for="guide-date" style="font-weight: 600; color: #475569;">Fecha de emisión *</label>
                                     <input wire:model="formData.fecha_emision" id="guide-date" type="datetime-local" class="control" @disabled($isViewing)>
                                     @error('formData.fecha_emision') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-branch">Sucursal *</label>
+                                    <label for="guide-branch" style="font-weight: 600; color: #475569;">Sucursal / Agencia *</label>
                                     @if (auth()->user()?->isBranchRestricted())
-                                        <input type="text" class="control" value="{{ auth()->user()->sucursal?->nombre ?? 'Sucursal asignada' }}" disabled readonly>
+                                        <input type="text" class="control" value="{{ auth()->user()->sucursal?->nombre ?? 'Sucursal asignada' }}" disabled readonly style="background: #f8fafc;">
                                     @else
                                         <x-searchable-select wire:model="formData.id_sucursal" id="guide-branch" class="control" @disabled($isViewing)>
                                             <option value="">Selecciona una sucursal</option>
                                             @foreach ($sucursales as $sucursal)
-                                                <option value="{{ $sucursal->id_sucursal }}">{{ $sucursal->nombre }} · {{ $sucursal->ciudad?->descripcion ?? 'Ciudad no disponible' }} · {{ $sucursal->empresa?->razon_social ?? 'Empresa no disponible' }}{{ $sucursal->estado === '1' ? '' : ' · Inactiva' }}</option>
+                                                <option value="{{ $sucursal->id_sucursal }}">{{ $sucursal->nombre }} · {{ $sucursal->ciudad?->descripcion ?? 'Ciudad no disponible' }}{{ $sucursal->estado === '1' ? '' : ' · Inactiva' }}</option>
                                             @endforeach
                                         </x-searchable-select>
                                     @endif
                                     @error('formData.id_sucursal') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-reason">Motivo de traslado *</label>
+                                    <label for="guide-reason" style="font-weight: 600; color: #475569;">Motivo de traslado *</label>
                                     <x-searchable-select wire:model="formData.id_motivo_traslado" id="guide-reason" class="control" @disabled($isViewing)>
                                         <option value="">Selecciona un motivo</option>
                                         @foreach ($motivos as $motivo)
@@ -109,7 +123,7 @@
                                     @error('formData.id_motivo_traslado') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-payment">Forma de pago *</label>
+                                    <label for="guide-payment" style="font-weight: 600; color: #475569;">Forma de pago *</label>
                                     <x-searchable-select wire:model="formData.id_forma_pago" id="guide-payment" class="control" @disabled($isViewing)>
                                         <option value="">Selecciona una forma de pago</option>
                                         @foreach ($formasPago as $formaPago)
@@ -119,7 +133,7 @@
                                     @error('formData.id_forma_pago') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-origin">Ciudad de origen *</label>
+                                    <label for="guide-origin" style="font-weight: 600; color: #475569;">Ciudad de origen *</label>
                                     <x-searchable-select wire:model="formData.ciudad_origen" id="guide-origin" class="control" @disabled($isViewing)>
                                         <option value="">Selecciona una ciudad</option>
                                         @foreach ($ciudades as $ciudad)
@@ -129,7 +143,7 @@
                                     @error('formData.ciudad_origen') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-destination">Ciudad de destino *</label>
+                                    <label for="guide-destination" style="font-weight: 600; color: #475569;">Ciudad de destino *</label>
                                     <x-searchable-select wire:model="formData.ciudad_destino" id="guide-destination" class="control" @disabled($isViewing)>
                                         <option value="">Selecciona una ciudad</option>
                                         @foreach ($ciudades as $ciudad)
@@ -138,205 +152,211 @@
                                     </x-searchable-select>
                                     @error('formData.ciudad_destino') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="field">
-                                    <label for="guide-state">Estado *</label>
-                                    <x-searchable-select wire:model="formData.estado" id="guide-state" class="control" @disabled($isViewing)>
-                                        <option value="1">Activa</option>
-                                        <option value="0">Anulada</option>
-                                    </x-searchable-select>
-                                    @error('formData.estado') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-                        </section>
 
-                        <section class="detail-card">
-                            <p class="eyebrow">Cliente / remitente</p>
-                            <div class="field">
-                                <label for="guide-client-search">Buscar cliente por nombres, apellidos o identificación *</label>
-                                <input wire:model.live.debounce.300ms="clientSearch" id="guide-client-search" type="search" class="control" placeholder="Escribe nombre o cédula/RUC..." @disabled($isViewing)>
-                                @error('formData.id_persona') <span class="field-error">{{ $message }}</span> @enderror
+                                <!-- CAMPO ESTADO: SOLO VISIBLE PARA ADMINISTRADORES / SUPER ADMINS -->
+                                @if (auth()->user()?->isAdministrator())
+                                    <div class="field">
+                                        <label for="guide-state" style="font-weight: 600; color: #475569;">Estado *</label>
+                                        <x-searchable-select wire:model="formData.estado" id="guide-state" class="control" @disabled($isViewing)>
+                                            <option value="1">Activa</option>
+                                            <option value="0">Anulada</option>
+                                        </x-searchable-select>
+                                        @error('formData.estado') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
+                                @endif
                             </div>
-                            @if (! $isViewing && trim($clientSearch) !== '' && mb_strlen(trim($clientSearch)) >= 2 && empty($formData['id_persona']))
-                                <div class="panel" style="margin-top:8px;">
-                                    @forelse ($clientes as $cliente)
-                                        <button wire:click="selectClient({{ $cliente->id_persona }})" type="button" class="panel-toolbar" style="width:100%; text-align:left; cursor:pointer;" wire:key="client-result-{{ $cliente->id_persona }}">
-                                            <span><strong>{{ $cliente->nombre }}</strong><br><span class="muted">{{ $cliente->tipo_dni }} · {{ $cliente->num_dni }}</span></span>
-                                            <span class="open-link">Seleccionar</span>
-                                        </button>
-                                    @empty
-                                        <div class="panel-toolbar"><span>No hay clientes que coincidan con la búsqueda.</span></div>
-                                        <div class="panel-toolbar">
-                                            <button wire:click="openQuickCustomerModal" type="button" class="button secondary">Crear nuevo cliente</button>
-                                        </div>
-                                    @endforelse
-                                </div>
-                            @endif
-                            <div class="form-grid" style="margin-top:14px;">
-                                <div class="field">
-                                    <label for="sender-name">Nombre del remitente *</label>
-                                    <input wire:model="formData.nom_remitente" id="sender-name" type="text" class="control" maxlength="50" @disabled($isViewing)>
-                                    @error('formData.nom_remitente') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="field">
-                                    <label for="sender-id">Identificación del remitente *</label>
-                                    <input wire:model="formData.dni_remitente" id="sender-id" type="text" class="control" maxlength="20" @disabled($isViewing)>
-                                    @error('formData.dni_remitente') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="field field-wide">
-                                    <label for="sender-address">Dirección del remitente *</label>
-                                    <input wire:model="formData.direccion_remitente" id="sender-address" type="text" class="control" maxlength="100" @disabled($isViewing)>
-                                    @error('formData.direccion_remitente') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="field">
-                                    <label for="sender-phone">Teléfono del remitente *</label>
-                                    <input wire:model="formData.fono_remitente" id="sender-phone" type="text" class="control" maxlength="20" @disabled($isViewing)>
-                                    @error('formData.fono_remitente') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-                        </section>
+                        </div>
 
-                        <section class="detail-card">
-                            <p class="eyebrow">Destinatario</p>
-                            <div class="form-grid">
-                                <div class="field">
-                                    <label for="recipient-name">Nombre del destinatario *</label>
-                                    <input wire:model="formData.nom_destinatario" id="recipient-name" type="text" class="control" maxlength="50" @disabled($isViewing)>
-                                    @error('formData.nom_destinatario') <span class="field-error">{{ $message }}</span> @enderror
+                        <!-- SECCIÓN 2: REMITENTE Y DESTINATARIO (2 COLUMNAS) -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px;">
+                            
+                            <!-- Remitente -->
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                                    <span style="font-size: 16px;">👤</span>
+                                    <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.03em;">2. Cliente / Remitente</h3>
                                 </div>
-                                <div class="field">
-                                    <label for="recipient-id">Identificación</label>
-                                    <input wire:model="formData.dni_destinatario" id="recipient-id" type="text" class="control" maxlength="20" @disabled($isViewing)>
-                                    @error('formData.dni_destinatario') <span class="field-error">{{ $message }}</span> @enderror
+                                <div class="field" style="margin-bottom: 14px;">
+                                    <label for="guide-client-search" style="font-weight: 600; color: #475569;">Buscar cliente (Nombre o DNI) *</label>
+                                    <input wire:model.live.debounce.300ms="clientSearch" id="guide-client-search" type="search" class="control" placeholder="Escribe nombre o cédula/RUC..." @disabled($isViewing)>
+                                    @error('formData.id_persona') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="field field-wide">
-                                    <label for="recipient-address">Dirección</label>
-                                    <input wire:model="formData.direccion_destinatario" id="recipient-address" type="text" class="control" maxlength="100" @disabled($isViewing)>
-                                    @error('formData.direccion_destinatario') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="field">
-                                    <label for="recipient-phone">Teléfono</label>
-                                    <input wire:model="formData.fono_destinatario" id="recipient-phone" type="text" class="control" maxlength="20" @disabled($isViewing)>
-                                    @error('formData.fono_destinatario') <span class="field-error">{{ $message }}</span> @enderror
+                                @if (! $isViewing && trim($clientSearch) !== '' && mb_strlen(trim($clientSearch)) >= 2 && empty($formData['id_persona']))
+                                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 160px; overflow-y: auto; margin-bottom: 14px;">
+                                        @forelse ($clientes as $cliente)
+                                            <button wire:click="selectClient({{ $cliente->id_persona }})" type="button" style="width:100%; text-align:left; padding: 10px 14px; background: none; border: none; border-bottom: 1px solid #e2e8f0; cursor:pointer; display: flex; justify-content: space-between; align-items: center;" wire:key="client-result-{{ $cliente->id_persona }}">
+                                                <span><strong style="color: #0f172a;">{{ $cliente->nombre }}</strong><br><span style="font-size: 11px; color: #64748b;">{{ $cliente->tipo_dni }} · {{ $cliente->num_dni }}</span></span>
+                                                <span style="color: #0284c7; font-weight: 700; font-size: 12px;">Seleccionar</span>
+                                            </button>
+                                        @empty
+                                            <div style="padding: 12px; text-align: center; color: #64748b; font-size: 12px;">No hay clientes que coincidan.</div>
+                                            <div style="padding: 8px; text-align: center;">
+                                                <button wire:click="openQuickCustomerModal" type="button" class="button secondary" style="font-size: 11px;">+ Crear nuevo cliente</button>
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                @endif
+                                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div class="field">
+                                        <label style="font-weight: 600; color: #475569;">Nombre remitente *</label>
+                                        <input wire:model="formData.nom_remitente" type="text" class="control" maxlength="50" @disabled($isViewing)>
+                                        @error('formData.nom_remitente') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div class="field">
+                                        <label style="font-weight: 600; color: #475569;">Identificación *</label>
+                                        <input wire:model="formData.dni_remitente" type="text" class="control" maxlength="20" @disabled($isViewing)>
+                                        @error('formData.dni_remitente') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div class="field field-wide" style="grid-column: 1 / -1;">
+                                        <label style="font-weight: 600; color: #475569;">Dirección *</label>
+                                        <input wire:model="formData.direccion_remitente" type="text" class="control" maxlength="100" @disabled($isViewing)>
+                                        @error('formData.direccion_remitente') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div class="field">
+                                        <label style="font-weight: 600; color: #475569;">Teléfono *</label>
+                                        <input wire:model="formData.fono_remitente" type="text" class="control" maxlength="20" @disabled($isViewing)>
+                                        @error('formData.fono_remitente') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
                                 </div>
                             </div>
-                        </section>
 
-                        <section class="detail-card">
-                            <div class="page-heading">
-                                <div><p class="eyebrow">Detalle de la guía</p><p class="muted">Agrega los artículos, cantidades y valores unitarios.</p></div>
+                            <!-- Destinatario -->
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                                    <span style="font-size: 16px;">📦</span>
+                                    <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.03em;">3. Destinatario</h3>
+                                </div>
+                                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 36px;">
+                                    <div class="field">
+                                        <label style="font-weight: 600; color: #475569;">Nombre destinatario *</label>
+                                        <input wire:model="formData.nom_destinatario" type="text" class="control" maxlength="50" @disabled($isViewing)>
+                                        @error('formData.nom_destinatario') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div class="field">
+                                        <label style="font-weight: 600; color: #475569;">Identificación</label>
+                                        <input wire:model="formData.dni_destinatario" type="text" class="control" maxlength="20" @disabled($isViewing)>
+                                        @error('formData.dni_destinatario') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div class="field field-wide" style="grid-column: 1 / -1;">
+                                        <label style="font-weight: 600; color: #475569;">Dirección</label>
+                                        <input wire:model="formData.direccion_destinatario" type="text" class="control" maxlength="100" @disabled($isViewing)>
+                                        @error('formData.direccion_destinatario') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div class="field">
+                                        <label style="font-weight: 600; color: #475569;">Teléfono</label>
+                                        <input wire:model="formData.fono_destinatario" type="text" class="control" maxlength="20" @disabled($isViewing)>
+                                        @error('formData.fono_destinatario') <span class="field-error">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN 3: DETALLE DE ARTÍCULOS Y VALORES -->
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 16px;">📋</span>
+                                    <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.03em;">4. Líneas de Detalle y Costos</h3>
+                                </div>
                                 @unless ($isViewing)
-                                    <button wire:click="addDetail" type="button" class="button secondary">+ Agregar línea</button>
+                                    <button wire:click="addDetail" type="button" class="button secondary" style="font-size: 12px; padding: 6px 12px;">+ Agregar línea</button>
                                 @endunless
                             </div>
-                            @foreach ($detalles as $index => $detail)
-                                <div class="detail-line" wire:key="guide-detail-{{ $detail['id_detalle'] ?? 'new-'.$index }}">
-                                    <div class="field">
-                                        <label for="detail-quantity-{{ $index }}">Cantidad *</label>
-                                        <input wire:model.live="detalles.{{ $index }}.cantidad" id="detail-quantity-{{ $index }}" type="number" class="control" min="1" @disabled($isViewing)>
+
+                            <div style="display: grid; gap: 10px;">
+                                @foreach ($detalles as $index => $detail)
+                                    <div style="display: grid; grid-template-columns: 90px 1fr 130px 130px 40px; align-items: center; gap: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;" wire:key="guide-detail-{{ $detail['id_detalle'] ?? 'new-'.$index }}">
+                                        <div class="field">
+                                            <label style="font-size: 10.5px; font-weight: 600; color: #64748b;">Cantidad *</label>
+                                            <input wire:model.live="detalles.{{ $index }}.cantidad" type="number" class="control" min="1" @disabled($isViewing)>
+                                        </div>
+                                        <div class="field">
+                                            <label style="font-size: 10.5px; font-weight: 600; color: #64748b;">Artículo / descripción *</label>
+                                            <input wire:model="detalles.{{ $index }}.descripcion" type="text" class="control" maxlength="100" @disabled($isViewing)>
+                                        </div>
+                                        <div class="field">
+                                            <label style="font-size: 10.5px; font-weight: 600; color: #64748b;">V. Unitario *</label>
+                                            <input wire:model.live="detalles.{{ $index }}.v_unitario" type="number" class="control" min="0" step="0.01" @disabled($isViewing)>
+                                        </div>
+                                        <div class="field">
+                                            <label style="font-size: 10.5px; font-weight: 600; color: #64748b;">Total línea</label>
+                                            <div class="control" style="background: #fff; font-weight: 700; display: flex; align-items: center;">${{ number_format((int) ($detail['cantidad'] ?? 0) * (float) ($detail['v_unitario'] ?? 0), 2) }}</div>
+                                        </div>
+                                        @unless ($isViewing)
+                                            <button wire:click="prepareRemoveDetail({{ $index }})" type="button" class="text-button danger" title="Quitar línea" style="font-size: 20px; font-weight: 700; text-align: center;">×</button>
+                                        @endunless
                                     </div>
-                                    <div class="field">
-                                        <label for="detail-description-{{ $index }}">Artículo / descripción *</label>
-                                        <input wire:model="detalles.{{ $index }}.descripcion" id="detail-description-{{ $index }}" type="text" class="control" maxlength="100" @disabled($isViewing)>
-                                    </div>
-                                    <div class="field">
-                                        <label for="detail-price-{{ $index }}">Valor unitario *</label>
-                                        <input wire:model.live="detalles.{{ $index }}.v_unitario" id="detail-price-{{ $index }}" type="number" class="control" min="0" step="0.01" @disabled($isViewing)>
-                                    </div>
-                                    <div class="field">
-                                        <label>Total línea</label>
-                                        <div class="control">${{ number_format((int) ($detail['cantidad'] ?? 0) * (float) ($detail['v_unitario'] ?? 0), 2) }}</div>
-                                    </div>
-                                    @unless ($isViewing)
-                                        <button wire:click="prepareRemoveDetail({{ $index }})" type="button" class="text-button danger" aria-label="Quitar línea">×</button>
-                                    @endunless
                                     @error("detalles.{$index}.cantidad") <span class="field-error">{{ $message }}</span> @enderror
                                     @error("detalles.{$index}.descripcion") <span class="field-error">{{ $message }}</span> @enderror
                                     @error("detalles.{$index}.v_unitario") <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                            @endforeach
-                            @error('detalles') <span class="field-error">{{ $message }}</span> @enderror
-                            <div class="form-grid form-grid-3" style="margin-top:14px;">
+                                @endforeach
+                            </div>
+
+                            <!-- Totales de Flete / Recargo / Prima -->
+                            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 20px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
                                 <div class="field">
-                                    <label for="guide-freight">Flete *</label>
-                                    <input wire:model.live="formData.flete" id="guide-freight" type="number" class="control" min="0" step="0.01" @disabled($isViewing)>
+                                    <label style="font-weight: 600; color: #475569;">Flete *</label>
+                                    <input wire:model.live="formData.flete" type="number" class="control" min="0" step="0.01" @disabled($isViewing)>
                                     @error('formData.flete') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-surcharge">Recargo</label>
-                                    <input wire:model.live="formData.recargo" id="guide-surcharge" type="number" class="control" min="0" step="0.01" @disabled($isViewing)>
+                                    <label style="font-weight: 600; color: #475569;">Recargo</label>
+                                    <input wire:model.live="formData.recargo" type="number" class="control" min="0" step="0.01" @disabled($isViewing)>
                                     @error('formData.recargo') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
-                                    <label for="guide-premium">Prima</label>
-                                    <input wire:model.live="formData.prima" id="guide-premium" type="number" class="control" min="0" step="0.01" @disabled($isViewing)>
+                                    <label style="font-weight: 600; color: #475569;">Prima</label>
+                                    <input wire:model.live="formData.prima" type="number" class="control" min="0" step="0.01" @disabled($isViewing)>
                                     @error('formData.prima') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="field">
-                                    <label>Valor de guía</label>
-                                    <div class="control"><strong>${{ number_format($guideAmount, 2) }}</strong></div>
+                                <div class="field" style="background: #e0f2fe; padding: 8px; border-radius: 6px;">
+                                    <label style="font-weight: 700; color: #0369a1;">Valor Total Guía</label>
+                                    <div style="font-size: 16px; font-weight: 800; color: #0369a1; margin-top: 4px;">${{ number_format($guideAmount, 2) }}</div>
                                 </div>
-                                <div class="field">
-                                    <label>Valor de artículos</label>
-                                    <div class="control">${{ number_format($itemsAmount, 2) }}</div>
+                                <div class="field" style="background: #f1f5f9; padding: 8px; border-radius: 6px;">
+                                    <label style="font-weight: 700; color: #475569;">Valor Artículos</label>
+                                    <div style="font-size: 16px; font-weight: 800; color: #334155; margin-top: 4px;">${{ number_format($itemsAmount, 2) }}</div>
                                 </div>
                             </div>
-                        </section>
+                        </div>
 
-                        <section class="detail-card">
-                            <p class="eyebrow">Referencias y notas</p>
-                            <div class="form-grid">
+                        <!-- SECCIÓN 4: REFERENCIAS Y OBSERVACIONES -->
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                                <span style="font-size: 16px;">📝</span>
+                                <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.03em;">5. Referencias y Notas Adicionales</h3>
+                            </div>
+                            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
                                 <div class="field">
-                                    <label for="customer-guide">Guía del cliente</label>
-                                    <input wire:model="formData.guia_rem_cliente" id="customer-guide" type="text" class="control" maxlength="45" @disabled($isViewing)>
-                                    @error('formData.guia_rem_cliente') <span class="field-error">{{ $message }}</span> @enderror
+                                    <label style="font-weight: 600; color: #475569;">Guía del cliente</label>
+                                    <input wire:model="formData.guia_rem_cliente" type="text" class="control" maxlength="45" @disabled($isViewing)>
                                 </div>
                                 <div class="field">
-                                    <label for="customer-invoice">Factura del cliente</label>
-                                    <input wire:model="formData.factura_cliente" id="customer-invoice" type="text" class="control" maxlength="45" @disabled($isViewing)>
-                                    @error('formData.factura_cliente') <span class="field-error">{{ $message }}</span> @enderror
+                                    <label style="font-weight: 600; color: #475569;">Factura del cliente</label>
+                                    <input wire:model="formData.factura_cliente" type="text" class="control" maxlength="45" @disabled($isViewing)>
                                 </div>
                                 <div class="field">
-                                    <label for="received-date">Fecha de recepción</label>
-                                    <input wire:model="formData.fecha_recepcion" id="received-date" type="datetime-local" class="control" @disabled($isViewing)>
-                                    @error('formData.fecha_recepcion') <span class="field-error">{{ $message }}</span> @enderror
+                                    <label style="font-weight: 600; color: #475569;">Fecha de recepción</label>
+                                    <input wire:model="formData.fecha_recepcion" type="datetime-local" class="control" @disabled($isViewing)>
                                 </div>
                                 <div class="field">
-                                    <label for="cancelled-date">Fecha de anulación</label>
-                                    <input wire:model="formData.fecha_cancelacion" id="cancelled-date" type="datetime-local" class="control" @disabled($isViewing)>
-                                    @error('formData.fecha_cancelacion') <span class="field-error">{{ $message }}</span> @enderror
+                                    <label style="font-weight: 600; color: #475569;">Nombre quien recibe</label>
+                                    <input wire:model="formData.nombre_recibe" type="text" class="control" maxlength="45" @disabled($isViewing)>
                                 </div>
-                                <div class="field">
-                                    <label for="received-by">Recibido por</label>
-                                    <input wire:model="formData.nombre_recibe" id="received-by" type="text" class="control" maxlength="45" @disabled($isViewing)>
-                                    @error('formData.nombre_recibe') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="field">
-                                    <label for="received-id">Identificación de quien recibe</label>
-                                    <input wire:model="formData.dni_recibe" id="received-id" type="text" class="control" maxlength="45" @disabled($isViewing)>
-                                    @error('formData.dni_recibe') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="field">
-                                    <label for="delivery-status">Estado de entrega</label>
-                                    <input wire:model="formData.estatus_entrega" id="delivery-status" type="text" class="control" maxlength="1" @disabled($isViewing)>
-                                    @error('formData.estatus_entrega') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="field">
-                                    <label for="payment-status">Estado de cobro</label>
-                                    <input wire:model="formData.estatus_cobro" id="payment-status" type="text" class="control" maxlength="20" @disabled($isViewing)>
-                                    @error('formData.estatus_cobro') <span class="field-error">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="field field-wide">
-                                    <label for="guide-notes">Observaciones</label>
-                                    <textarea wire:model="formData.nota" id="guide-notes" class="control" rows="3" @disabled($isViewing)></textarea>
-                                    @error('formData.nota') <span class="field-error">{{ $message }}</span> @enderror
+                                <div class="field field-wide" style="grid-column: 1 / -1;">
+                                    <label style="font-weight: 600; color: #475569;">Observaciones</label>
+                                    <textarea wire:model="formData.nota" class="control" rows="2" @disabled($isViewing)></textarea>
                                 </div>
                             </div>
-                        </section>
+                        </div>
+
                     </div>
-                    <footer class="resource-modal-footer">
-                        <button wire:click="$set('showModal', false)" type="button" class="button secondary">{{ $isViewing ? 'Cerrar' : 'Cancelar' }}</button>
+
+                    <!-- FOOTER FIJO ABAJO -->
+                    <footer class="resource-modal-footer" style="background: #f8fafc; padding: 16px 28px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button wire:click="$set('showModal', false)" type="button" class="button secondary" style="padding: 10px 20px;">{{ $isViewing ? 'Cerrar' : 'Cancelar' }}</button>
                         @unless ($isViewing)
-                            <button type="submit" class="button primary" wire:loading.attr="disabled">Guardar guía</button>
+                            <button type="submit" class="button primary" wire:loading.attr="disabled" style="padding: 10px 24px; font-size: 13.5px;">Guardar Guía</button>
                         @endunless
                     </footer>
                 </form>

@@ -14,7 +14,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('components.layouts.app')]
-#[Title('Panel Gerencial')]
+#[Title('Panel de Control')]
 class DashboardManager extends Component
 {
     public function boot(): void
@@ -24,8 +24,56 @@ class DashboardManager extends Component
 
     public function render(): View
     {
+        $user = auth()->user();
+        $isRestricted = $user?->isBranchRestricted() ?? false;
+        $userBranchId = $user?->id_sucursal;
+
         $monthStart = CarbonImmutable::now()->startOfMonth();
         $monthEnd = $monthStart->endOfMonth();
+        $todayStart = CarbonImmutable::now()->startOfDay();
+        $todayEnd = CarbonImmutable::now()->endOfDay();
+
+        // 1. VISTA EXCLUSIVA PARA SECRETARÍA / AGENCIA
+        if ($isRestricted) {
+            $branchGuiasHoy = Cabecera::query()
+                ->where('id_sucursal', $userBranchId)
+                ->whereBetween('fecha_emision', [$todayStart->toDateTimeString(), $todayEnd->toDateTimeString()])
+                ->where('estado', '1')
+                ->count();
+
+            $branchGuiasMes = Cabecera::query()
+                ->where('id_sucursal', $userBranchId)
+                ->whereBetween('fecha_emision', [$monthStart->toDateTimeString(), $monthEnd->toDateTimeString()])
+                ->where('estado', '1')
+                ->count();
+
+            $branchPendientesCobro = Cabecera::query()
+                ->where('id_sucursal', $userBranchId)
+                ->where('estado', '1')
+                ->whereRaw('UPPER(estatus_cobro) = ?', ['PENDIENTE'])
+                ->count();
+
+            $recentBranchGuides = Cabecera::query()
+                ->where('id_sucursal', $userBranchId)
+                ->with(['persona'])
+                ->latest('id_cabecera')
+                ->limit(8)
+                ->get();
+
+            return view('livewire.dashboard-manager', [
+                'isRestricted' => true,
+                'userBranchName' => $user?->sucursal?->nombre ?? 'Mi Agencia',
+                'metrics' => [
+                    'guias_hoy' => $branchGuiasHoy,
+                    'guias_mes' => $branchGuiasMes,
+                    'pendientes_cobro' => $branchPendientesCobro,
+                    'clientes_activos' => Persona::query()->where('tipo_persona', 'C')->where('estado', '1')->count(),
+                ],
+                'recentGuides' => $recentBranchGuides,
+            ]);
+        }
+
+        // 2. VISTA GLOBAL GERENCIAL (ADMIN / SUPER ADMIN)
         $monthlyExpressions = [];
         $monthlyBindings = [];
         $monthlyPeriods = [];
@@ -65,6 +113,7 @@ class DashboardManager extends Component
         );
 
         $maximumMonthlyCount = max(1, max(array_column($monthly, 'count')));
+
         $branchAggregates = Cabecera::query()
             ->selectRaw(
                 "id_sucursal,
@@ -98,6 +147,7 @@ class DashboardManager extends Component
             ->values();
 
         return view('livewire.dashboard-manager', [
+            'isRestricted' => false,
             'metrics' => [
                 'guias' => (int) $monthlyTotals->count_0,
                 'ingresos' => (float) $monthlyTotals->revenue_0,
@@ -108,11 +158,6 @@ class DashboardManager extends Component
             'maximumMonthlyCount' => $maximumMonthlyCount,
             'branchCosts' => $branchCosts,
             'historicalBranchValues' => $historicalBranchValues,
-            'catalogCounts' => [
-                'clientes' => Persona::query()->where('tipo_persona', 'C')->where('estado', '1')->count(),
-                'sucursales' => Sucursal::query()->where('estado', '1')->count(),
-                'empresas' => Empresa::query()->where('estado', '1')->count(),
-            ],
         ]);
     }
 }

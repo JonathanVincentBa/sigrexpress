@@ -30,13 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::livewire('resources/vehiculos', VehiculoManager::class)->name('resources.vehiculo.index');
-    Route::livewire('resources/estados-guia', GuiaEstadoManager::class)->name('resources.guia-estado.index');
-    Route::livewire('resources/manifiestos', ManifiestoManager::class)->name('resources.manifiesto.index');
-    Route::livewire('reportes', ReportesManager::class)->name('reports.index');
-    Route::get('reportes/exportar/pdf', [ReportExportController::class, 'downloadPdf'])->name('reports.export.pdf');
-    Route::get('reportes/exportar/excel', [ReportExportController::class, 'downloadExcel'])->name('reports.export.excel');
-    Route::get('manifiestos/{manifest}/pdf', ManifestPdfController::class)->name('manifiestos.pdf');
+    // Manual de ayuda
     Route::get('manual-ayuda', function () {
         $exists = Storage::disk('public')->exists('manual/manual_usuario.pdf');
 
@@ -45,23 +39,47 @@ Route::middleware('auth')->group(function () {
             'manualUrl' => $exists ? Storage::disk('public')->url('manual/manual_usuario.pdf') : null,
         ]);
     })->name('manual.index');
+    
     Route::get('manual-ayuda/descargar', function () {
         abort_unless(Storage::disk('public')->exists('manual/manual_usuario.pdf'), 404);
 
         return Storage::disk('public')->download('manual/manual_usuario.pdf', 'Manual-Usuario-SIGRExpress.pdf');
     })->name('manual.download');
 
-    Route::livewire('resources/empresas', EmpresaManager::class)->name('resources.empresa.index');
-    Route::livewire('resources/sucursales', SucursalManager::class)->name('resources.sucursal.index');
-    Route::livewire('resources/ciudades', CiudadManager::class)->name('resources.ciudad.index');
-    Route::livewire('resources/cargos', CargoManager::class)->name('resources.cargo.index');
-    Route::livewire('resources/motivos-traslado', MotivoTrasladoManager::class)->name('resources.motivo-traslado.index');
-    Route::livewire('resources/formas-pago', FormasPagoManager::class)->name('resources.formas-pago.index');
-    Route::livewire('resources/personas', PersonaManager::class)->name('resources.persona.index');
-    Route::livewire('resources/usuarios', UserManager::class)->name('resources.users.index');
-    Route::livewire('resources/roles', RoleManager::class)->name('resources.roles.index');
-    Route::livewire('resources/guias', CabeceraManager::class)->name('resources.cabecera.index');
-    Route::livewire('resources/detalles', DetalleManager::class)->name('resources.detalle.index');
+   // Módulos Operativos (Protegidos por permisos)
+    Route::middleware('can:guias.ver')->group(function () {
+        Route::livewire('resources/guias', CabeceraManager::class)->name('resources.cabecera.index');
+        Route::livewire('resources/detalles', DetalleManager::class)->name('resources.detalle.index');
+        Route::livewire('resources/estados-guia', GuiaEstadoManager::class)->name('resources.guia-estado.index');
+        Route::livewire('resources/manifiestos', ManifiestoManager::class)->name('resources.manifiesto.index');
+        Route::get('manifiestos/{manifest}/pdf', ManifestPdfController::class)->name('manifiestos.pdf');
+    });
+
+    Route::middleware('can:clientes.ver')->group(function () {
+        Route::livewire('resources/personas', PersonaManager::class)->name('resources.persona.index');
+    });
+
+    Route::middleware('can:reportes.ver')->group(function () {
+        Route::livewire('reportes', ReportesManager::class)->name('reports.index');
+        Route::get('reportes/exportar/pdf', [ReportExportController::class, 'downloadPdf'])->name('reports.export.pdf');
+        Route::get('reportes/exportar/excel', [ReportExportController::class, 'downloadExcel'])->name('reports.export.excel');
+    });
+
+    // Módulos Administrativos y de Seguridad
+    Route::middleware('can:usuarios.ver')->group(function () {
+        Route::livewire('resources/usuarios', UserManager::class)->name('resources.users.index');
+    });
+
+    Route::middleware('can:roles.gestionar')->group(function () {
+        Route::livewire('resources/roles', RoleManager::class)->name('resources.roles.index');
+        Route::livewire('resources/empresas', EmpresaManager::class)->name('resources.empresa.index');
+        Route::livewire('resources/sucursales', SucursalManager::class)->name('resources.sucursal.index');
+        Route::livewire('resources/ciudades', CiudadManager::class)->name('resources.ciudad.index');
+        Route::livewire('resources/cargos', CargoManager::class)->name('resources.cargo.index');
+        Route::livewire('resources/motivos-traslado', MotivoTrasladoManager::class)->name('resources.motivo-traslado.index');
+        Route::livewire('resources/formas-pago', FormasPagoManager::class)->name('resources.formas-pago.index');
+        Route::livewire('resources/vehiculos', VehiculoManager::class)->name('resources.vehiculo.index');
+    });
 });
 
 require __DIR__.'/settings.php';

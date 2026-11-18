@@ -171,6 +171,7 @@
 
             <!-- 1. OPERACIÓN -->
             <p class="nav-title">Operación</p>
+            @can('guias.ver')
             <a class="nav-item {{ request()->routeIs('resources.cabecera.*') ? 'active' : '' }}" 
                href="{{ $routeHref('resources.cabecera.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
@@ -191,6 +192,9 @@
                 <span class="nav-bullet"></span>
                 <span>Manifiestos de Carga</span>
             </a>
+            @endcan
+
+            @can('clientes.ver')
             <a class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}" 
                href="{{ $routeHref('reports.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
@@ -201,16 +205,20 @@
                 <span class="nav-bullet"></span>
                 <span>Personas</span>
             </a>
+@endcan
 
             <!-- 2. RECURSOS HUMANOS (RRHH) -->
+            @can('clientes.ver')
             <p class="nav-title">Recursos Humanos (RRHH)</p>
             <a class="nav-item {{ request()->routeIs('resources.persona.index') ? 'active' : '' }}" 
                href="{{ $routeHref('resources.persona.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Control Personal / Empleados</span>
             </a>
+@endcan
 
             <!-- 3. ADMINISTRACIÓN -->
+            @can('roles.gestionar')
             <p class="nav-title">Administración</p>
             <a class="nav-item {{ request()->routeIs('resources.empresa.*') ? 'active' : '' }}" 
                href="{{ $routeHref('resources.empresa.index') }}" wire:navigate>
@@ -247,19 +255,25 @@
                 <span class="nav-bullet"></span>
                 <span>Vehículos</span>
             </a>
+@endcan
 
             <!-- 4. SEGURIDAD -->
             <p class="nav-title">Seguridad</p>
+            @can('usuarios.ver')
             <a class="nav-item {{ request()->routeIs('resources.users.*') ? 'active' : '' }}" 
                href="{{ $routeHref('resources.users.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Usuarios</span>
             </a>
+            @endcan
+            
+            @can('roles.gestionar')
             <a class="nav-item {{ request()->routeIs('resources.roles.*') ? 'active' : '' }}" 
                href="{{ $routeHref('resources.roles.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Roles y Permisos</span>
             </a>
+            @endcan
             <a class="nav-item {{ request()->routeIs('manual.*') ? 'active' : '' }}" 
                href="{{ $routeHref('manual.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
