@@ -258,6 +258,10 @@ class LegacySqlImportSeeder extends Seeder
                 ];
             }
 
+            if ($sourceTable === 'cabecera') {
+                $this->clearMissingPersonReferences($preparedRows);
+            }
+
             if ($sourceTable === 'detalle') {
                 $this->clearMissingDetailReferences($preparedRows);
             }
@@ -385,6 +389,42 @@ class LegacySqlImportSeeder extends Seeder
 
             $prepared['attributes']['id_cabecera'] = null;
             $this->command?->warn("El detalle heredado {$sourceId} refiere a la cabecera {$guideId} inexistente; se conservó sin relación.");
+        }
+
+        unset($prepared);
+    }
+
+    /**
+     * @param  array<int, array{source: array<string, string|null>, attributes: array<string, mixed>, checksum: string}>  $preparedRows
+     */
+    private function clearMissingPersonReferences(array &$preparedRows): void
+    {
+        $personIds = collect($preparedRows)
+            ->pluck('attributes.id_persona')
+            ->filter(fn (mixed $id): bool => $id !== null)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($personIds === []) {
+            return;
+        }
+
+        $existingPersonIds = DB::table('persona')
+            ->whereIn('id_persona', $personIds)
+            ->pluck('id_persona')
+            ->mapWithKeys(fn (int $id): array => [(string) $id => true])
+            ->all();
+
+        foreach ($preparedRows as $sourceId => &$prepared) {
+            $personId = $prepared['attributes']['id_persona'] ?? null;
+
+            if ($personId === null || isset($existingPersonIds[(string) $personId])) {
+                continue;
+            }
+
+            $prepared['attributes']['id_persona'] = null;
+            $this->command?->warn("La cabecera heredada {$sourceId} refiere a la persona {$personId} inexistente; se conservó con id_persona en null.");
         }
 
         unset($prepared);

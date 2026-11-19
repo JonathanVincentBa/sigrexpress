@@ -2,17 +2,16 @@
 
 return [
     'files' => [
-        'empresa' => env('LEGACY_EMPRESA_SQL'),
-        'cargo' => env('LEGACY_CARGO_SQL'),
-        'formas_pago' => env('LEGACY_FORMAS_PAGO_SQL'),
-        'motivo_traslado' => env('LEGACY_MOTIVO_TRASLADO_SQL'),
-        'rol' => env('LEGACY_ROL_SQL'),
-        'ciudad' => env('LEGACY_CIUDAD_SQL'),
-        'sucursal' => env('LEGACY_SUCURSAL_SQL'),
-        'persona' => env('LEGACY_PERSONA_SQL'),
-        'users' => env('LEGACY_USERS_SQL'),
-        'cabecera' => env('LEGACY_CABECERA_SQL'),
-        'detalle' => env('LEGACY_DETALLE_SQL'),
+        'empresa' => database_path('seeders/sql/empresa.sql'),
+        'cargo' => database_path('seeders/sql/cargo.sql'),
+        'ciudad' => database_path('seeders/sql/ciudad.sql'),
+        'formas_pago' => database_path('seeders/sql/formas_pago.sql'),
+        'motivo_traslado' => database_path('seeders/sql/motivo_traslado.sql'),
+        'sucursal' => database_path('seeders/sql/sucursal.sql'),
+        'persona' => database_path('seeders/sql/persona.sql'),
+        'cabecera' => database_path('seeders/sql/cabecera.sql'),
+        'detalle' => database_path('seeders/sql/detalle.sql'),
+        'rol' => database_path('seeders/sql/rol.sql'),
+        'users' => database_path('seeders/sql/users.sql'),
     ],
-    'chunk_size' => 250,
 ];

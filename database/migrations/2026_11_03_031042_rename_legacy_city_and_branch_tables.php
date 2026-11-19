@@ -18,7 +18,9 @@ return new class extends Migration
         if (Schema::hasTable('sucursal')) {
             if (! Schema::hasColumn('sucursal', 'nombre')) {
                 Schema::table('sucursal', function (Blueprint $table): void {
-                    $table->string('nombre', 100)->default('Sucursal');
+                    $table->string('nombre', 100)
+                        ->default('Sucursal')
+                        ->after('id_ciudad');
                 });
 
                 if (Schema::hasTable('ciudad')) {
@@ -33,6 +35,13 @@ return new class extends Migration
                                 ->update(['nombre' => 'Agencia '.mb_substr(trim($branch->descripcion), 0, 90)]);
                         });
                 }
+            } elseif (Schema::hasColumn('sucursal', 'id_ciudad')) {
+                Schema::table('sucursal', function (Blueprint $table): void {
+                    $table->string('nombre', 100)
+                        ->default('Sucursal')
+                        ->after('id_ciudad')
+                        ->change();
+                });
             }
 
             if (! Schema::hasColumn('sucursal', 'deleted_at')) {
