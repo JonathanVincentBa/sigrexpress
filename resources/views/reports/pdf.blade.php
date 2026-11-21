@@ -11,14 +11,32 @@
         th, td { border: 1px solid #d9e0ea; padding: 6px; text-align: left; }
         th { background: #edf4ff; }
         tfoot td { font-weight: bold; }
+        .text-right { text-align: right; }
     </style>
 </head>
 <body>
     <h1>{{ $title }}</h1>
     <p>Período: {{ $filters['fecha_desde'] }} — {{ $filters['fecha_hasta'] }}</p>
+    @if (! empty($filters['cliente_nombre']))
+        <p>Filtro remitente / destinatario: {{ $filters['cliente_nombre'] }}</p>
+    @endif
     <p>Generado: {{ now()->format('d/m/Y H:i') }} · Registros: {{ $guides->count() }}</p>
     <table>
-        <thead><tr><th>Guía</th><th>Fecha</th><th>Origen</th><th>Destino</th><th>Cliente / remitente</th><th>Destinatario</th><th>Sucursal</th><th>Usuario</th><th>Cobro</th><th>Valor</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Guía</th>
+                <th>Fecha</th>
+                <th>Origen</th>
+                <th>Destino</th>
+                <th>Cliente / remitente</th>
+                <th>Destinatario</th>
+                <th>Sucursal</th>
+                <th>Usuario</th>
+                <th>Cobro</th>
+                <th class="text-right">Ítems</th>
+                <th class="text-right">Valor</th>
+            </tr>
+        </thead>
         <tbody>
             @foreach ($guides as $guide)
                 <tr>
@@ -31,11 +49,18 @@
                     <td>{{ $guide->sucursal?->nombre ?? '—' }}</td>
                     <td>{{ $guide->usuario?->name ?? '—' }}</td>
                     <td>{{ $guide->estatus_cobro ?? '—' }}</td>
-                    <td>${{ number_format((float) $guide->valor_guia, 2) }}</td>
+                    <td class="text-right">{{ (int) ($guide->detalles_sum_cantidad ?? 0) }}</td>
+                    <td class="text-right">${{ number_format((float) $guide->valor_guia, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
-        <tfoot><tr><td colspan="9">Total del reporte</td><td>${{ number_format((float) $total, 2) }}</td></tr></tfoot>
+        <tfoot>
+            <tr>
+                <td colspan="9">Total del reporte</td>
+                <td class="text-right">{{ number_format((int) ($totalItems ?? 0)) }}</td>
+                <td class="text-right">${{ number_format((float) $total, 2) }}</td>
+            </tr>
+        </tfoot>
     </table>
 </body>
 </html>

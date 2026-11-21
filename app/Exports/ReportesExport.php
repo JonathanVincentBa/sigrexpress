@@ -42,6 +42,7 @@ class ReportesExport implements FromQuery, WithHeadings, WithMapping, WithSheetP
             'Sucursal',
             'Usuario',
             'Estado de cobro',
+            'Ítems',
             'Valor',
         ];
     }
@@ -57,7 +58,7 @@ class ReportesExport implements FromQuery, WithHeadings, WithMapping, WithSheetP
 
         return [
             $row->num_guia,
-            $row->fecha_emision->format('d/m/Y H:i'),
+            $row->fecha_emision?->format('d/m/Y H:i') ?? '',
             $row->ciudad_origen,
             $row->ciudad_destino,
             data_get($row, 'persona.nombre') ?? $row->nom_remitente,
@@ -65,6 +66,7 @@ class ReportesExport implements FromQuery, WithHeadings, WithMapping, WithSheetP
             data_get($row, 'sucursal.nombre', '—'),
             data_get($row, 'usuario.name', '—'),
             $row->estatus_cobro ?? '—',
+            (int) ($row->detalles_sum_cantidad ?? 0),
             (float) $row->valor_guia,
         ];
     }
