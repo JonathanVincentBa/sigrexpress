@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\CajaReportController;
 use App\Http\Controllers\ManifestPdfController;
 use App\Http\Controllers\ReportExportController;
 use App\Livewire\DashboardManager;
 use App\Livewire\Resources\CabeceraManager;
+use App\Livewire\Resources\CajaManager;
 use App\Livewire\Resources\CargoManager;
 use App\Livewire\Resources\CiudadManager;
 use App\Livewire\Resources\DetalleManager;
@@ -39,20 +41,24 @@ Route::middleware('auth')->group(function () {
             'manualUrl' => $exists ? Storage::disk('public')->url('manual/manual_usuario.pdf') : null,
         ]);
     })->name('manual.index');
-    
+
     Route::get('manual-ayuda/descargar', function () {
         abort_unless(Storage::disk('public')->exists('manual/manual_usuario.pdf'), 404);
 
         return Storage::disk('public')->download('manual/manual_usuario.pdf', 'Manual-Usuario-SIGRExpress.pdf');
     })->name('manual.download');
 
-   // Módulos Operativos (Protegidos por permisos)
+    // Módulos Operativos (Protegidos por permisos)
     Route::middleware('can:guias.ver')->group(function () {
         Route::livewire('resources/guias', CabeceraManager::class)->name('resources.cabecera.index');
         Route::livewire('resources/detalles', DetalleManager::class)->name('resources.detalle.index');
         Route::livewire('resources/estados-guia', GuiaEstadoManager::class)->name('resources.guia-estado.index');
         Route::livewire('resources/manifiestos', ManifiestoManager::class)->name('resources.manifiesto.index');
         Route::get('manifiestos/{manifest}/pdf', ManifestPdfController::class)->name('manifiestos.pdf');
+
+        Route::livewire('resources/caja', CajaManager::class)->name('resources.caja.index');
+        Route::get('caja/reportes/usuario', [CajaReportController::class, 'usuarioPdf'])->name('caja.reportes.usuario');
+        Route::get('caja/reportes/admin', [CajaReportController::class, 'adminPdf'])->name('caja.reportes.admin');
     });
 
     Route::middleware('can:clientes.ver')->group(function () {

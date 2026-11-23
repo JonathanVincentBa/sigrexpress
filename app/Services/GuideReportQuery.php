@@ -11,23 +11,115 @@ use Illuminate\Database\Eloquent\Builder;
 class GuideReportQuery
 {
     /**
+     * Determina qué bloques de filtros (02, 03, 04) aplica cada tipo de reporte.
+     * Si no se ha seleccionado un reporte ($reportType === ''), todos quedan deshabilitados.
+     *
+     * @return array{bloque_02: bool, bloque_03: bool, bloque_04: bool}
+     */
+    public function enabledBlocksFor(string $reportType): array
+    {
+        if (trim($reportType) === '') {
+            return [
+                'bloque_02' => false,
+                'bloque_03' => false,
+                'bloque_04' => false,
+            ];
+        }
+
+        return match ($reportType) {
+            'cierres_diarios' => [
+                'bloque_02' => false,
+                'bloque_03' => false,
+                'bloque_04' => true,
+            ],
+            'manifiestos_origen', 'manifiestos_destino' => [
+                'bloque_02' => false,
+                'bloque_03' => true,
+                'bloque_04' => true,
+            ],
+            'por_pagar', 'por_cobrar', 'pagadas_cobro' => [
+                'bloque_02' => true,
+                'bloque_03' => true,
+                'bloque_04' => true,
+            ],
+            'clientes', 'por_facturar', 'por_facturar_canceladas', 'por_facturar_por_pagar', 'anuladas' => [
+                'bloque_02' => true,
+                'bloque_03' => false,
+                'bloque_04' => true,
+            ],
+            default => [
+                'bloque_02' => false,
+                'bloque_03' => false,
+                'bloque_04' => false,
+            ],
+        };
+    }
+
+    /**
+     * Limpia filtros que pertenecen a bloques deshabilitados para el tipo de reporte.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function sanitizeFiltersForType(array $filters): array
+    {
+        $reportType = (string) ($filters['tipo'] ?? '');
+        $blocks = $this->enabledBlocksFor($reportType);
+
+        if (! $blocks['bloque_02']) {
+            $filters['cliente'] = '';
+            $filters['cliente_nombre'] = '';
+        }
+
+        if (! $blocks['bloque_03']) {
+            $filters['sucursal_origen'] = '';
+            $filters['ciudad_destino'] = [];
+        }
+
+        if (! $blocks['bloque_04']) {
+            $filters['sucursal'] = '';
+            $filters['usuario'] = '';
+        }
+
+        return $filters;
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      * @return Builder<Cabecera>
      */
     public function build(array $filters, ?User $actor = null): Builder
     {
-        $reportType = $filters['tipo'] ?? 'clientes';
+        $filters = $this->sanitizeFiltersForType($filters);
+        $reportType = (string) ($filters['tipo'] ?? '');
         $dateField = 'fecha_emision';
 
         $query = Cabecera::query()
             ->withoutGlobalScope(AssignedBranchScope::class)
-            ->with([
-                'persona',
-                'sucursal' => fn ($q) => $q->withoutGlobalScope(AssignedBranchScope::class)->with('ciudad'),
-                'usuario',
-                'formaPago',
+            ->select([
+                'id_cabecera',
+                'num_guia',
+                'fecha_emision',
+                'ciudad_origen',
+                'ciudad_destino',
+                'id_persona',
+                'nom_remitente',
+                'dni_remitente',
+                'nom_destinatario',
+                'dni_destinatario',
+                'id_sucursal',
+                'id_users',
+                'id_forma_pago',
+                'estatus_cobro',
+                'valor_guia',
+                'estado',
+                'deleted_at',
             ])
-            ->withCount('detalles')
+            ->with([
+                'persona:id_persona,nombre,num_dni',
+                'sucursal' => fn ($q) => $q->withoutGlobalScope(AssignedBranchScope::class)->select(['id_sucursal', 'id_ciudad', 'nombre']),
+                'usuario:id,name',
+            ])
             ->withSum([
                 'detalles' => fn ($q) => $q->withoutGlobalScope(AssignedBranchScope::class),
             ], 'cantidad')
@@ -46,6 +138,10 @@ class GuideReportQuery
             $query->where('id_sucursal', $actor->id_sucursal);
         } elseif (! empty($filters['sucursal'])) {
             $query->where('id_sucursal', $filters['sucursal']);
+        }
+
+        if (! empty($filters['sucursal_origen'])) {
+            $query->where('id_sucursal', (int) $filters['sucursal_origen']);
         }
 
         $clienteId = ! empty($filters['cliente']) ? (int) $filters['cliente'] : null;
@@ -81,10 +177,6 @@ class GuideReportQuery
 
         if (! empty($filters['usuario'])) {
             $query->where('id_users', $filters['usuario']);
-        }
-
-        if (! empty($filters['ciudad_origen'])) {
-            $query->where('ciudad_origen', $filters['ciudad_origen']);
         }
 
         if (! empty($filters['ciudad_destino'])) {

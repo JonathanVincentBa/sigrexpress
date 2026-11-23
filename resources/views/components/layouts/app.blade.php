@@ -182,16 +182,16 @@
                 <span class="nav-bullet"></span>
                 <span>Detalles de Guías</span>
             </a> --}}
-            {{-- <a class="nav-item {{ request()->routeIs('resources.guia-estado.*') ? 'active' : '' }}" 
-               href="{{ $routeHref('resources.guia-estado.index') }}" wire:navigate>
+            <a class="nav-item {{ request()->routeIs('resources.caja.*') ? 'active' : '' }}" 
+               href="{{ $routeHref('resources.caja.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
-                <span>Estados de Guías</span>
+                <span>Caja y Cierres</span>
             </a>
-            <a class="nav-item {{ request()->routeIs('resources.manifiesto.*') ? 'active' : '' }}" 
+            {{-- <a class="nav-item {{ request()->routeIs('resources.manifiesto.*') ? 'active' : '' }}" 
                href="{{ $routeHref('resources.manifiesto.index') }}" wire:navigate>
                 <span class="nav-bullet"></span>
                 <span>Manifiestos de Carga</span>
-            </a> --}}
+            </a>  --}}
             @endcan
 
             @can('clientes.ver')

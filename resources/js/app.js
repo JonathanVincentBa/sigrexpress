@@ -195,6 +195,7 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => initializeSearchableSelects());
+document.addEventListener('livewire:navigated', () => initializeSearchableSelects());
 
 const registerLivewireHooks = () => {
     if (!window.Livewire) {
@@ -203,10 +204,14 @@ const registerLivewireHooks = () => {
 
     window.Livewire.hook('morph.added', ({ el }) => initializeSearchableSelects(el));
     window.Livewire.hook('morph.updated', ({ el }) => {
-        const wrapper = el instanceof Element ? el.closest('[data-searchable-select]') : null;
+        if (el instanceof Element) {
+            const wrapper = el.closest('[data-searchable-select]');
 
-        if (wrapper) {
-            initializeSearchableSelect(wrapper);
+            if (wrapper) {
+                initializeSearchableSelect(wrapper);
+            } else {
+                initializeSearchableSelects(el);
+            }
         }
     });
 };
