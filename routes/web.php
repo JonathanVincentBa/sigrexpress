@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\CajaReportController;
 use App\Http\Controllers\ManifestPdfController;
-use App\Http\Controllers\ReportExportController;
+use App\Http\Controllers\ReportesController;
 use App\Livewire\DashboardManager;
 use App\Livewire\Resources\CabeceraManager;
 use App\Livewire\Resources\CajaManager;
@@ -21,6 +21,7 @@ use App\Livewire\Resources\SucursalManager;
 use App\Livewire\Resources\UserManager;
 use App\Livewire\Resources\VehiculoManager;
 use App\Livewire\Tracking\TrackingGuia;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -34,18 +35,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware('auth')->group(function () {
     // Manual de ayuda
     Route::get('manual-ayuda', function () {
-        $exists = Storage::disk('public')->exists('manual/manual_usuario.pdf');
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+        $exists = $disk->exists('manual/manual_usuario.pdf');
 
         return view('help.manual', [
             'manualExists' => $exists,
-            'manualUrl' => $exists ? Storage::disk('public')->url('manual/manual_usuario.pdf') : null,
+            'manualUrl' => $exists ? $disk->url('manual/manual_usuario.pdf') : null,
         ]);
     })->name('manual.index');
 
     Route::get('manual-ayuda/descargar', function () {
-        abort_unless(Storage::disk('public')->exists('manual/manual_usuario.pdf'), 404);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+        abort_unless($disk->exists('manual/manual_usuario.pdf'), 404);
 
-        return Storage::disk('public')->download('manual/manual_usuario.pdf', 'Manual-Usuario-SIGRExpress.pdf');
+        return $disk->download('manual/manual_usuario.pdf', 'Manual-Usuario-SIGRExpress.pdf');
     })->name('manual.download');
 
     // Módulos Operativos (Protegidos por permisos)
@@ -54,7 +59,7 @@ Route::middleware('auth')->group(function () {
         Route::livewire('resources/detalles', DetalleManager::class)->name('resources.detalle.index');
         Route::livewire('resources/estados-guia', GuiaEstadoManager::class)->name('resources.guia-estado.index');
         Route::livewire('resources/manifiestos', ManifiestoManager::class)->name('resources.manifiesto.index');
-        Route::get('manifiestos/{manifest}/pdf', ManifestPdfController::class)->name('manifiestos.pdf');
+        Route::get('manifiestos/{manifest}/pdf', ManifestPdfController::class)->name('manifiests.pdf');
 
         Route::livewire('resources/caja', CajaManager::class)->name('resources.caja.index');
         Route::get('caja/reportes/usuario', [CajaReportController::class, 'usuarioPdf'])->name('caja.reportes.usuario');
@@ -65,10 +70,18 @@ Route::middleware('auth')->group(function () {
         Route::livewire('resources/personas', PersonaManager::class)->name('resources.persona.index');
     });
 
-    Route::middleware('can:reportes.ver')->group(function () {
-        Route::livewire('reportes', ReportesManager::class)->name('reports.index');
-        Route::get('reportes/exportar/pdf', [ReportExportController::class, 'downloadPdf'])->name('reports.export.pdf');
-        Route::get('reportes/exportar/excel', [ReportExportController::class, 'downloadExcel'])->name('reports.export.excel');
+    Route::middleware(['auth', 'verified', 'can:reportes.ver'])->group(function () {
+        Route::prefix('reportes')->group(function () {
+            Route::livewire('/', ReportesManager::class)->name('reports.index');
+            Route::get('/controlador', [ReportesController::class, 'index'])->name('reports.controller');
+            Route::post('/generar', [ReportesController::class, 'generar'])->name('reports.generar');
+            Route::get('/cierre-usuario', [ReportesController::class, 'cierreCajaUsuario'])->name('reports.cierre.usuario');
+
+            // Aliases de URL manteniendo nombres únicos
+            Route::post('/generar-reporte', [ReportesController::class, 'generar'])->name('reportes.generar');
+            Route::get('/cierre-usuario-pdf', [ReportesController::class, 'cierreCajaUsuario'])->name('reportes.cierre.usuario');
+        });
+        Route::get('/reportes-general', fn () => redirect()->route('reports.index'))->name('reportes.index');
     });
 
     // Módulos Administrativos y de Seguridad
@@ -88,4 +101,4 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

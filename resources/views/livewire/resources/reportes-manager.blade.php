@@ -1,621 +1,1012 @@
-<div class="space-y-6">
-    {{-- Encabezado ejecutivo integrado al estilo SIGRExpress --}}
-    <div class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs border-l-4 border-l-blue-700">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="space-y-1">
-                <div class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-700">
-                    <span>Analítica y Control Gerencial</span>
-                    <span class="text-slate-300">•</span>
-                    <span class="text-slate-600">{{ $reportTypes[$tipo] ?? 'Selecciona tu reporte' }}</span>
-                </div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Reportes Gerenciales</h1>
-                <p class="text-sm text-slate-600">
-                    Selecciona el tipo de informe y utiliza los bloques habilitados para previsualizar en modal o
-                    exportar a PDF y Excel.
-                </p>
+<div class="rm-wrap">
+    <style>
+        .rm-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .rm-hero {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 24px;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #1d4ed8;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+        }
+
+        .rm-hero-sub {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #1d4ed8;
+            margin-bottom: 6px;
+        }
+
+        .rm-hero-sub .rm-meta-type {
+            color: #475569;
+            text-transform: none;
+            letter-spacing: normal;
+            font-weight: 600;
+        }
+
+        .rm-hero h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.25;
+        }
+
+        .rm-hero p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.45;
+        }
+
+        .rm-hero-right {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .rm-period-box {
+            padding: 8px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .rm-period-box span {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+        }
+
+        .rm-period-box strong {
+            display: block;
+            margin-top: 2px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .rm-panel {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
+        }
+
+        .rm-panel-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .rm-panel-head h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .rm-panel-head p {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .rm-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rm-error-box {
+            margin: 18px 24px 0;
+            padding: 14px 16px;
+            border: 1px solid #fecdd3;
+            border-radius: 10px;
+            background: #fff1f2;
+            color: #9f1239;
+            font-size: 12.5px;
+        }
+
+        .rm-error-box ul {
+            margin: 8px 0 0 18px;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .rm-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            padding: 24px;
+        }
+
+        .rm-card {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+        }
+
+        .rm-card.is-disabled {
+            background: #f8fafc;
+            opacity: 0.72;
+        }
+
+        .rm-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .rm-card-code {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #1d4ed8;
+        }
+
+        .rm-card-header h3 {
+            margin: 3px 0 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .rm-card-header p {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .rm-badge {
+            flex-shrink: 0;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .rm-badge.is-active {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .rm-locked-msg {
+            padding: 12px 14px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .rm-fields-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .rm-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .rm-field-full {
+            grid-column: 1 / -1;
+        }
+
+        .rm-field label {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .rm-field-error {
+            font-size: 11.5px;
+            color: #dc2626;
+            margin-top: 2px;
+        }
+
+        .rm-cat-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .rm-cat-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .rm-cat-btn.is-active {
+            border-color: #1d4ed8;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .rm-cat-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #475569;
+            padding: 6px 8px 2px;
+        }
+
+        .rm-selected-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            background: #f0f9ff;
+        }
+
+        .rm-selected-card span {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #0369a1;
+        }
+
+        .rm-selected-card strong {
+            display: block;
+            margin-top: 2px;
+            font-size: 13px;
+            color: #0f172a;
+        }
+
+        .rm-chips-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .rm-chip-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1e40af;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .rm-chip-tag button {
+            border: 0;
+            background: transparent;
+            color: #1d4ed8;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 2px;
+        }
+
+        .rm-city-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 175px;
+            overflow-y: auto;
+            padding: 6px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #ffffff;
+        }
+
+        .rm-city-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 10px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            background: transparent;
+            color: #334155;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .rm-city-btn:hover {
+            background: #f8fafc;
+        }
+
+        .rm-city-btn.is-selected {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .rm-row-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .rm-link-clear {
+            border: 0;
+            background: transparent;
+            color: #dc2626;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .rm-link-clear:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 960px) {
+            .rm-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .rm-fields-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    @php
+        $catalogoReportes = [
+            // CLIENTES
+            ['value' => 'cliente_xfacturar', 'label' => 'Guías por facturar (por cliente)', 'categoria' => 'clientes'],
+            [
+                'value' => 'cliente_xfacturar_canceladas',
+                'label' => 'Guías por facturar canceladas (por cliente)',
+                'categoria' => 'clientes',
+            ],
+            [
+                'value' => 'cliente_xfacturar_xpagar',
+                'label' => 'Guías por facturar pendientes de pago (por cliente)',
+                'categoria' => 'clientes',
+            ],
+            [
+                'value' => 'cliente_xfacturar_xpagar_todos',
+                'label' => 'Guías por facturar pendientes (Todos los clientes)',
+                'categoria' => 'clientes',
+            ],
+            [
+                'value' => 'cliente_todas_formas_pago',
+                'label' => 'Historial completo (Todas las formas de pago)',
+                'categoria' => 'clientes',
+            ],
+
+            // MENSUALIZADOS
+            [
+                'value' => 'sucursal_xfacturar_canceladas',
+                'label' => 'Guías por facturar canceladas (por sucursal origen)',
+                'categoria' => 'mensualizados',
+            ],
+            [
+                'value' => 'sucursal_xfacturar_xpagar',
+                'label' => 'Guías por facturar pendientes (por sucursal origen)',
+                'categoria' => 'mensualizados',
+            ],
+
+            // VARIOS
+            ['value' => 'manifiesto_destino', 'label' => 'Manifiesto por ciudades de destino', 'categoria' => 'varios'],
+            ['value' => 'manifiesto_origen', 'label' => 'Manifiesto por sucursal de origen', 'categoria' => 'varios'],
+            ['value' => 'cobro_pendiente', 'label' => 'Guías pendientes de pago (Al cobro)', 'categoria' => 'varios'],
+            ['value' => 'cobro_pagado', 'label' => 'Guías pagadas (Al cobro)', 'categoria' => 'varios'],
+            ['value' => 'cierres_diarios', 'label' => 'Cierre de caja diario por usuario', 'categoria' => 'varios'],
+            ['value' => 'anuladas', 'label' => 'Reporte de guías anuladas', 'categoria' => 'varios'],
+        ];
+
+        $categoriaActiva = $reportCategoryTab ?? 'todos';
+        $reporteSeleccionado = collect($catalogoReportes)->firstWhere('value', (string) ($tipo_reporte ?? ''));
+
+        $reportesMostrados = collect($catalogoReportes);
+        if ($categoriaActiva !== 'todos') {
+            $reportesMostrados = $reportesMostrados->where('categoria', $categoriaActiva);
+        }
+        $reportesAgrupados = $reportesMostrados->groupBy('categoria');
+
+        $etiquetasCategoria = [
+            'clientes' => 'Clientes',
+            'mensualizados' => 'Mensualizados',
+            'varios' => 'Varios',
+        ];
+
+        $listaClientes = collect($filteredClientes ?? [])
+            ->map(function ($c) {
+                if (is_array($c)) {
+                    return (string) ($c['nom_remitente'] ?? ($c['nombre'] ?? ($c['name'] ?? '')));
+                }
+                if (is_object($c)) {
+                    return (string) ($c->nom_remitente ?? ($c->nombre ?? ($c->name ?? '')));
+                }
+                return (string) $c;
+            })
+            ->filter(fn($n) => $n !== '')
+            ->values();
+
+        $listaSucursales = collect($sucursales ?? [])
+            ->map(function ($s) {
+                if (is_array($s)) {
+                    $val = $s['nombre'] ?? ($s['sucursal'] ?? ($s['descripcion'] ?? ($s['id'] ?? '')));
+                    $label = $s['nombre'] ?? ($s['sucursal'] ?? ($s['descripcion'] ?? $val));
+                } elseif (is_object($s)) {
+                    $val = $s->nombre ?? ($s->sucursal ?? ($s->descripcion ?? ($s->id ?? '')));
+                    $label = $s->nombre ?? ($s->sucursal ?? ($s->descripcion ?? $val));
+                } else {
+                    $val = (string) $s;
+                    $label = (string) $s;
+                }
+                return ['value' => (string) $val, 'label' => (string) $label];
+            })
+            ->filter(fn($item) => $item['value'] !== '')
+            ->values();
+
+        $qSucursal = mb_strtolower(trim($branchSearch ?? ''));
+        $sucursalesFiltradas =
+            $qSucursal === ''
+                ? $listaSucursales
+                : $listaSucursales
+                    ->filter(fn($item) => str_contains(mb_strtolower($item['label']), $qSucursal))
+                    ->values();
+
+        $sucursalSeleccionada = $listaSucursales->firstWhere('value', (string) ($ciudad_origen ?? ''));
+
+        $listaCiudades = collect($filteredCiudades ?? [])
+            ->map(function ($city) {
+                if (is_array($city)) {
+                    return (string) ($city['descripcion'] ?? ($city['nombre'] ?? ($city['name'] ?? '')));
+                }
+                if (is_object($city)) {
+                    return (string) ($city->descripcion ?? ($city->nombre ?? ($city->name ?? '')));
+                }
+                return (string) $city;
+            })
+            ->filter(fn($n) => $n !== '')
+            ->values();
+
+        $listaUsuarios = collect($usuarios ?? [])
+            ->map(function ($u) {
+                $id = is_array($u) ? $u['id'] ?? '' : (is_object($u) ? $u->id ?? '' : $u);
+                $name = is_array($u) ? $u['name'] ?? $id : (is_object($u) ? $u->name ?? $id : $u);
+                return ['id' => (string) $id, 'name' => (string) $name];
+            })
+            ->filter(fn($item) => $item['id'] !== '')
+            ->values();
+
+        $qUsuario = mb_strtolower(trim($userSearch ?? ''));
+        $usuariosFiltrados =
+            $qUsuario === ''
+                ? $listaUsuarios
+                : $listaUsuarios->filter(fn($item) => str_contains(mb_strtolower($item['name']), $qUsuario))->values();
+
+        $usuarioSeleccionado = $listaUsuarios->firstWhere('id', (string) ($id_users ?? ''));
+    @endphp
+
+    {{-- Encabezado --}}
+    <div class="rm-hero">
+        <div>
+            <div class="rm-hero-sub">
+                <span>Analítica y Control Gerencial</span>
+                <span>•</span>
+                <span class="rm-meta-type">
+                    {{ $reporteSeleccionado['label'] ?? 'Selecciona tu reporte' }}
+                </span>
+            </div>
+            <h1>Centro de Reportes Gerenciales</h1>
+            <p>
+                Selecciona el tipo de informe por categoría (Clientes, Mensualizados y Varios) y el rango de fechas.
+            </p>
+        </div>
+
+        <div class="rm-hero-right">
+            <div class="rm-period-box">
+                <span>Período activo</span>
+                <strong>{{ $fecha_inicio ?: '—' }} — {{ $fecha_final ?: '—' }}</strong>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3 text-xs">
-                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2">
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Período
-                        activo</span>
-                    <span class="font-semibold text-slate-800 tabular-nums">{{ $fecha_desde }} —
-                        {{ $fecha_hasta }}</span>
-                </div>
-                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2">
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Alcance de
-                        sucursal</span>
-                    <span
-                        class="font-semibold text-slate-800">{{ $isBranchRestricted ? 'Sucursal asignada' : 'Todas las sucursales' }}</span>
-                </div>
-            </div>
+            @if (\Illuminate\Support\Facades\Route::has('reports.cierre.usuario'))
+                <a href="{{ route('reports.cierre.usuario') }}" class="button secondary">
+                    Mi Cierre de Caja Hoy
+                </a>
+            @endif
         </div>
     </div>
 
-    {{-- Panel principal de parámetros --}}
-    <section class="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <form wire:submit="preview">
-            <div
-                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4">
-                <div>
-                    <h2 class="text-base font-bold text-slate-900">Parámetros y criterios de consulta</h2>
-                    <p class="text-xs text-slate-500">
-                        @if ($tipo === '')
-                            Selecciona tu reporte para habilitar los bloques correspondientes.
-                        @else
-                            Los bloques 02, 03 y 04 se habilitan automáticamente según el tipo de reporte elegido.
-                        @endif
-                    </p>
+    {{-- Panel principal --}}
+    <section class="rm-panel">
+        <div class="rm-panel-head">
+            <div>
+                <h2>Parámetros y criterios de consulta</h2>
+                <p>
+                    @if ($tipo_reporte === '')
+                        Elige una categoría y selecciona tu reporte en el Bloque 01 para habilitar los filtros
+                        necesarios.
+                    @else
+                        Los bloques 02, 03 y 04 se habilitan automáticamente según el tipo de reporte elegido.
+                    @endif
+                </p>
+            </div>
+
+            <div class="rm-actions" x-data="{ enviando: false }" x-on:livewire:navigated.window="enviando = false">
+                <button type="button" wire:click="generar('pdf')"
+                    x-on:click="enviando = true; setTimeout(() => enviando = false, 8000)" wire:loading.attr="disabled"
+                    wire:target="generar" x-bind:disabled="enviando || $wire.tipo_reporte === ''"
+                    @disabled($tipo_reporte === '') class="button danger" style="cursor: pointer;">
+                    <span wire:loading.remove wire:target="generar">Generar Reporte PDF</span>
+                    <span wire:loading wire:target="generar">Generando...</span>
+                </button>
+
+                <button type="button" wire:click="generar('excel')"
+                    x-on:click="enviando = true; setTimeout(() => enviando = false, 8000)" wire:loading.attr="disabled"
+                    wire:target="generar" x-bind:disabled="enviando || $wire.tipo_reporte === ''"
+                    @disabled($tipo_reporte === '') class="button primary" style="cursor: pointer;">
+                    <span wire:loading.remove wire:target="generar">Exportar a Excel</span>
+                    <span wire:loading wire:target="generar">Exportando...</span>
+                </button>
+            </div>
+        </div>
+
+        @if (isset($errors) && $errors->any())
+            <div class="rm-error-box">
+                <strong>Revisa los campos obligatorios:</strong>
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <div class="rm-grid">
+            {{-- BLOQUE 01: Tipo de reporte (Clientes / Mensualizados / Varios) y rango de fechas --}}
+            <div class="rm-card">
+                <div class="rm-card-header">
+                    <div>
+                        <span class="rm-card-code">Bloque 01</span>
+                        <h3>Tipo de Reporte y Rango de Fechas</h3>
+                        <p>Requerido en todas las consultas de clientes, mensualizados y varios.</p>
+                    </div>
+                    <span class="rm-badge is-active">Principal</span>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2.5">
-                    <button class="button primary inline-flex items-center gap-2 font-semibold" type="submit"
-                        wire:loading.attr="disabled" wire:target="preview">
-                        <span wire:loading.remove wire:target="preview">Previsualizar reporte</span>
-                        <span wire:loading wire:target="preview">Consultando...</span>
-                    </button>
+                <div class="rm-fields-row">
+                    <div class="rm-field rm-field-full">
+                        <div class="rm-row-between">
+                            <label>Tipo de reporte *</label>
+                            @if (($tipo_reporte ?? '') !== '')
+                                <button type="button" wire:click="$set('tipo_reporte', '')" class="rm-link-clear">
+                                    Quitar selección
+                                </button>
+                            @endif
+                        </div>
+
+                        @if ($reporteSeleccionado)
+                            <div class="rm-selected-card">
+                                <div>
+                                    <span>
+                                        Reporte seleccionado
+                                        ({{ $etiquetasCategoria[$reporteSeleccionado['categoria']] ?? 'General' }})
+                                    </span>
+                                    <strong>{{ $reporteSeleccionado['label'] }}</strong>
+                                </div>
+                                <button type="button" wire:click="$set('tipo_reporte', '')" class="button secondary">
+                                    Cambiar
+                                </button>
+                            </div>
+                        @else
+                            <div class="rm-cat-tabs">
+                                <button type="button" wire:click="$set('reportCategoryTab', 'todos')"
+                                    class="rm-cat-btn {{ $categoriaActiva === 'todos' ? 'is-active' : '' }}">
+                                    Todos
+                                </button>
+                                <button type="button" wire:click="$set('reportCategoryTab', 'clientes')"
+                                    class="rm-cat-btn {{ $categoriaActiva === 'clientes' ? 'is-active' : '' }}">
+                                    Clientes
+                                </button>
+                                <button type="button" wire:click="$set('reportCategoryTab', 'mensualizados')"
+                                    class="rm-cat-btn {{ $categoriaActiva === 'mensualizados' ? 'is-active' : '' }}">
+                                    Mensualizados
+                                </button>
+                                <button type="button" wire:click="$set('reportCategoryTab', 'varios')"
+                                    class="rm-cat-btn {{ $categoriaActiva === 'varios' ? 'is-active' : '' }}">
+                                    Varios
+                                </button>
+                            </div>
+
+                            <div class="rm-city-list">
+                                @foreach ($reportesAgrupados as $catKey => $itemsCat)
+                                    <div class="rm-cat-section-title">
+                                        {{ $etiquetasCategoria[$catKey] ?? ucfirst($catKey) }}
+                                    </div>
+                                    @foreach ($itemsCat as $rep)
+                                        @php $isRepSel = ($tipo_reporte ?? '') === $rep['value']; @endphp
+                                        <button type="button" wire:key="rep-{{ $rep['value'] }}"
+                                            wire:click="$set('tipo_reporte', '{{ $rep['value'] }}')"
+                                            class="rm-city-btn {{ $isRepSel ? 'is-selected' : '' }}">
+                                            <span>{{ $rep['label'] }}</span>
+                                            <span style="font-size: 11px; color: #1d4ed8;">Seleccionar</span>
+                                        </button>
+                                    @endforeach
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @error('tipo_reporte')
+                            <span class="rm-field-error">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="rm-field">
+                        <label for="fecha_inicio">Fecha inicial *</label>
+                        <input wire:model.live="fecha_inicio" id="fecha_inicio" type="date"
+                            max="{{ date('Y-m-d') }}" class="control">
+                        @error('fecha_inicio')
+                            <span class="rm-field-error">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="rm-field">
+                        <label for="fecha_final">Fecha final *</label>
+                        <input wire:model.live="fecha_final" id="fecha_final" type="date" min="{{ $fecha_inicio }}"
+                            max="{{ date('Y-m-d') }}" class="control">
+                        @error('fecha_final')
+                            <span class="rm-field-error">{{ $message }}</span>
+                        @enderror
+                    </div>
                 </div>
             </div>
 
-            <div class="p-5 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {{-- BLOQUE 01: Tipo de reporte y rango de fechas --}}
-                <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
-                    <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                        <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-700">Bloque 01</span>
-                            <h3 class="text-sm font-bold text-slate-900">Tipo de Reporte y Rango de Fechas</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Base para guías por facturar, al cobro, anuladas,
-                                cierres diarios y manifiestos.</p>
-                        </div>
-                        <span
-                            class="shrink-0 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
-                            Principal
-                        </span>
+            {{-- BLOQUE 02: Cliente / Remitente --}}
+            @php $b2Enabled = ($activeFilter ?? '') === 'cliente'; @endphp
+            <div class="rm-card {{ $b2Enabled ? '' : 'is-disabled' }}">
+                <div class="rm-card-header">
+                    <div>
+                        <span class="rm-card-code">Bloque 02</span>
+                        <h3>Cliente / Remitente</h3>
+                        <p>
+                            {{ $b2Enabled ? 'Busca y selecciona el cliente o remitente (nom_remitente).' : 'Se habilita al elegir un reporte de Clientes.' }}
+                        </p>
                     </div>
-
-                    <div class="form-grid">
-                        <div class="field col-span-full">
-                            <label for="report-type" class="font-medium text-slate-700">Tipo de reporte</label>
-                            <div wire:ignore wire:key="report-type-wrapper">
-                                <x-searchable-select wire:model.live="tipo" id="report-type" class="control">
-                                    <option value="">Selecciona tu reporte</option>
-                                    @foreach ($reportTypes as $key => $label)
-                                        <option value="{{ $key }}">{{ $label }}</option>
-                                    @endforeach
-                                </x-searchable-select>
-                            </div>
-                            @error('tipo')
-                                <span class="field-error">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="field">
-                            <label for="report-from" class="font-medium text-slate-700">Fecha inicial</label>
-                            <input wire:model="fecha_desde" id="report-from" class="control tabular-nums"
-                                type="date">
-                            @error('fecha_desde')
-                                <span class="field-error">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="field">
-                            <label for="report-to" class="font-medium text-slate-700">Fecha final</label>
-                            <input wire:model="fecha_hasta" id="report-to" class="control tabular-nums" type="date">
-                            @error('fecha_hasta')
-                                <span class="field-error">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
+                    <span class="rm-badge {{ $b2Enabled ? 'is-active' : '' }}">
+                        {{ $b2Enabled ? 'Habilitado' : 'Inhabilitado' }}
+                    </span>
                 </div>
 
-                {{-- BLOQUE 02: Remitente / Destinatario / Cliente --}}
-                <div
-                    class="rounded-xl border {{ $enabledBlocks['bloque_02'] ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50/80 opacity-65' }} p-5 space-y-4">
-                    <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                        <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-sky-700">Bloque 02</span>
-                            <h3 class="text-sm font-bold text-slate-900">Remitente / Destinatario</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">
-                                {{ $enabledBlocks['bloque_02'] ? 'Búsqueda predictiva en tiempo real por nombre, DNI o RUC.' : ($tipo === '' ? 'Selecciona tu reporte para habilitar este bloque.' : 'No aplica para el tipo de reporte seleccionado.') }}
-                            </p>
-                        </div>
-                        <span
-                            class="shrink-0 rounded-full {{ $enabledBlocks['bloque_02'] ? 'bg-sky-50 border-sky-200 text-sky-700' : 'bg-slate-100 border-slate-200 text-slate-500' }} border px-2.5 py-0.5 text-[11px] font-semibold">
-                            {{ $enabledBlocks['bloque_02'] ? 'Habilitado' : 'Inhabilitado' }}
-                        </span>
+                @if (!$b2Enabled)
+                    <div class="rm-locked-msg">
+                        Selecciona un reporte de Clientes en el Bloque 01 para habilitar este bloque.
                     </div>
-
-                    @if (!$enabledBlocks['bloque_02'])
-                        <div
-                            class="rounded-lg border border-dashed border-slate-300 bg-white/70 p-3 text-xs text-slate-500">
-                            {{ $tipo === '' ? 'Selecciona tu reporte en el Bloque 01 para habilitar este bloque.' : 'Este bloque permanece inhabilitado para ' . ($reportTypes[$tipo] ?? $tipo) . ' y no envía parámetros a la consulta.' }}
+                @elseif (($nom_remitente ?? '') !== '')
+                    <div class="rm-selected-card">
+                        <div>
+                            <span>Cliente seleccionado</span>
+                            <strong>{{ $nom_remitente }}</strong>
                         </div>
-                    @else
-                        <div class="field">
-                            <label for="report-customer" class="font-medium text-slate-700">
-                                Nombre o identificación (Remitente / Destinatario)
-                            </label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button type="button" wire:click="clearCliente" class="button secondary">
+                                Cambiar
+                            </button>
+                            <button type="button" wire:click="clearCliente" class="rm-link-clear">
+                                Quitar selección
+                            </button>
+                        </div>
+                    </div>
+                @else
+                    <div class="rm-field">
+                        <div class="rm-row-between">
+                            <label for="customerSearch">Buscar cliente / remitente *</label>
+                            @if (trim($customerSearch ?? '') !== '')
+                                <button type="button" wire:click="$set('customerSearch', '')" class="rm-link-clear">
+                                    Quitar selección
+                                </button>
+                            @endif
+                        </div>
 
-                            @if ($cliente_nombre !== '' && $customerSearch === '')
-                                <div class="rounded-xl border border-sky-200 bg-sky-50/60 p-3.5 space-y-2">
-                                    <div class="flex items-center justify-between gap-3">
-                                        <div class="flex items-center gap-2">
-                                            @if ($cliente_tipo === 'Cliente')
-                                                <span
-                                                    class="rounded-full bg-blue-100 border border-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-800 uppercase tracking-wide">
-                                                    Cliente
-                                                </span>
-                                            @elseif ($cliente_tipo === 'Remitente')
-                                                <span
-                                                    class="rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800 uppercase tracking-wide">
-                                                    Remitente
-                                                </span>
-                                            @elseif ($cliente_tipo === 'Destinatario')
-                                                <span
-                                                    class="rounded-full bg-indigo-100 border border-indigo-200 px-2 py-0.5 text-[10px] font-bold text-indigo-800 uppercase tracking-wide">
-                                                    Destinatario
-                                                </span>
-                                            @else
-                                                <span
-                                                    class="rounded-full bg-slate-100 border border-slate-300 px-2 py-0.5 text-[10px] font-bold text-slate-700 uppercase tracking-wide">
-                                                    Filtro fijado
-                                                </span>
-                                            @endif
-                                            <span class="font-bold text-slate-900 text-sm">{{ $cliente_nombre }}</span>
-                                        </div>
+                        <input wire:model.live.debounce.200ms="customerSearch" id="customerSearch" type="search"
+                            class="control" placeholder="Escribe para buscar cliente o remitente..."
+                            autocomplete="off">
 
-                                        <div class="flex items-center gap-2">
-                                            <button type="button" wire:click="editCustomer"
-                                                class="button secondary text-xs py-1 px-2.5">
-                                                Cambiar
-                                            </button>
-                                            <button type="button" wire:click="clearCustomer"
-                                                class="button secondary text-xs py-1 px-2.5 text-rose-600 hover:text-rose-800">
-                                                Limpiar
-                                            </button>
-                                        </div>
-                                    </div>
+                        @if ($listaClientes->isNotEmpty())
+                            <div class="rm-city-list">
+                                @foreach ($listaClientes as $clientName)
+                                    <button type="button" wire:key="cli-{{ md5($clientName) }}"
+                                        wire:click="selectCliente('{{ addslashes($clientName) }}')"
+                                        class="rm-city-btn">
+                                        <span>{{ $clientName }}</span>
+                                        <span style="font-size: 11px; color: #1d4ed8;">Seleccionar</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @elseif (mb_strlen(trim($customerSearch ?? '')) >= 1)
+                            <span class="rm-field-error">Sin coincidencias para "{{ $customerSearch }}".</span>
+                        @endif
 
-                                    @if ($cliente_identificacion !== '')
-                                        <div class="text-xs text-slate-600 flex items-center gap-2">
-                                            <span class="text-slate-400 font-medium">Identificación (DNI/RUC):</span>
-                                            <span
-                                                class="font-mono font-semibold text-slate-800 bg-white border border-slate-200 rounded px-1.5 py-0.5">{{ $cliente_identificacion }}</span>
-                                        </div>
-                                    @endif
-                                    <p class="text-[11px] text-slate-500">
-                                        Filtro fijado para remitente o destinatario en las consultas y exportaciones.
-                                    </p>
-                                </div>
+                        @error('nom_remitente')
+                            <span class="rm-field-error">{{ $message }}</span>
+                        @enderror
+                    </div>
+                @endif
+            </div>
+
+            {{-- BLOQUE 03: Sucursal de Origen y Ciudades de Destino --}}
+            @php $b3Enabled = in_array(($activeFilter ?? ''), ['origen', 'destino'], true); @endphp
+            <div class="rm-card {{ $b3Enabled ? '' : 'is-disabled' }}">
+                <div class="rm-card-header">
+                    <div>
+                        <span class="rm-card-code">Bloque 03</span>
+                        <h3>Sucursal de Origen y Ciudades de Destino</h3>
+                        <p>
+                            @if (($isSecretaria ?? false) && $b3Enabled)
+                                Consulta restringida a tu ciudad asignada ({{ $ciudadSecretaria }}).
+                            @elseif ($b3Enabled)
+                                Busca y selecciona la sucursal de origen o las ciudades de destino.
                             @else
-                                <div class="space-y-2">
-                                    <div class="flex items-center gap-2">
-                                        <input wire:model.live.debounce.250ms="customerSearch" id="report-customer"
-                                            type="search" class="control flex-1" maxlength="100"
-                                            placeholder="Ej. PING, remitente, destinatario o identificación..."
-                                            autocomplete="off">
-                                        @if ($cliente_nombre !== '' || $customerSearch !== '')
-                                            <button wire:click="clearCustomer" type="button"
-                                                class="button secondary text-xs shrink-0">
-                                                Limpiar
-                                            </button>
-                                        @endif
+                                Se habilita al elegir reportes de Mensualizados o Varios con origen/destino.
+                            @endif
+                        </p>
+                    </div>
+                    <span class="rm-badge {{ $b3Enabled ? 'is-active' : '' }}">
+                        {{ $b3Enabled ? 'Habilitado' : 'Inhabilitado' }}
+                    </span>
+                </div>
+
+                @if (!$b3Enabled)
+                    <div class="rm-locked-msg">
+                        Selecciona un reporte con sucursal de origen o ciudades de destino en el Bloque 01.
+                    </div>
+                @elseif (($activeFilter ?? '') === 'origen')
+                    <div class="rm-field">
+                        <div class="rm-row-between">
+                            <label for="branchSearch">Sucursal de origen *</label>
+                            @if (!($isSecretaria ?? false) && ($ciudad_origen ?? '') !== '')
+                                <button type="button" wire:click="$set('ciudad_origen', '')" class="rm-link-clear">
+                                    Quitar selección
+                                </button>
+                            @endif
+                        </div>
+
+                        @if ($isSecretaria ?? false)
+                            <div class="rm-selected-card">
+                                <div>
+                                    <span>Ciudad asignada (rol secretaría — fija)</span>
+                                    <strong>{{ $ciudadSecretaria }}</strong>
+                                </div>
+                                <span class="rm-badge is-active">Bloqueada</span>
+                            </div>
+                        @elseif ($sucursalSeleccionada)
+                            <div class="rm-selected-card">
+                                <div>
+                                    <span>Sucursal seleccionada</span>
+                                    <strong>{{ $sucursalSeleccionada['label'] }}</strong>
+                                </div>
+                                <button type="button" wire:click="$set('ciudad_origen', '')"
+                                    class="button secondary">
+                                    Cambiar
+                                </button>
+                            </div>
+                        @else
+                            <input wire:model.live.debounce.150ms="branchSearch" id="branchSearch" type="search"
+                                class="control" placeholder="Buscar sucursal..." autocomplete="off">
+
+                            <div class="rm-city-list">
+                                @forelse ($sucursalesFiltradas as $sucItem)
+                                    @php $isSucSel = ($ciudad_origen ?? '') === $sucItem['value']; @endphp
+                                    <button type="button" wire:key="suc-{{ md5($sucItem['value']) }}"
+                                        wire:click="$set('ciudad_origen', '{{ addslashes($sucItem['value']) }}')"
+                                        class="rm-city-btn {{ $isSucSel ? 'is-selected' : '' }}">
+                                        <span>{{ $sucItem['label'] }}</span>
+                                        <span>{{ $isSucSel ? 'Activa' : 'Seleccionar' }}</span>
+                                    </button>
+                                @empty
+                                    <div class="rm-locked-msg">Sin sucursales coincidentes.</div>
+                                @endforelse
+                            </div>
+                        @endif
+
+                        @error('ciudad_origen')
+                            <span class="rm-field-error">{{ $message }}</span>
+                        @enderror
+                    </div>
+                @elseif (($activeFilter ?? '') === 'destino')
+                    <div class="rm-field">
+                        <div class="rm-row-between">
+                            <label for="destinationCitySearch">Ciudades de destino *</label>
+                            @if (!($isSecretaria ?? false) && !empty($ciudad_destino))
+                                <button type="button" wire:click="clearCiudadesDestino" class="rm-link-clear">
+                                    Quitar selección ({{ count($ciudad_destino) }})
+                                </button>
+                            @endif
+                        </div>
+
+                        @if ($isSecretaria ?? false)
+                            <div class="rm-selected-card">
+                                <div>
+                                    <span>Ciudad asignada (rol secretaría — fija)</span>
+                                    <strong>{{ $ciudadSecretaria }}</strong>
+                                </div>
+                                <span class="rm-badge is-active">Bloqueada</span>
+                            </div>
+                        @else
+                            @if (!empty($ciudad_destino))
+                                <div class="rm-selected-card">
+                                    <div>
+                                        <span>Ciudades seleccionadas ({{ count($ciudad_destino) }})</span>
+                                        <strong>{{ implode(', ', $ciudad_destino) }}</strong>
                                     </div>
+                                    <button type="button" wire:click="clearCiudadesDestino"
+                                        class="button secondary">
+                                        Cambiar
+                                    </button>
+                                </div>
 
-                                    @if ($customerSearch !== '')
-                                        <p class="text-xs text-slate-500">
-                                            Filtrando en tiempo real por: <strong>"{{ $customerSearch }}"</strong>.
-                                            Puedes seleccionar una sugerencia o generar el reporte con este texto.
-                                        </p>
-                                    @else
-                                        <p class="text-xs text-slate-500">
-                                            Escribe al menos 2 caracteres para ver sugerencias predictivas (clientes o
-                                            guías) o presiona Previsualizar para texto libre.
-                                        </p>
-                                    @endif
-
-                                    @if (mb_strlen(trim($customerSearch)) >= 2 && $predictiveSuggestions->isNotEmpty())
-                                        <div
-                                            class="rounded-xl border border-slate-200 bg-white shadow-lg p-2 grid gap-1.5 max-h-56 overflow-y-auto">
-                                            <div
-                                                class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 flex items-center justify-between">
-                                                <span>Sugerencias predictivas</span>
-                                                <span class="text-slate-400 font-normal">Catálogo y Guías</span>
-                                            </div>
-                                            @foreach ($predictiveSuggestions as $suggestion)
-                                                <button
-                                                    wire:key="pred-sug-{{ $suggestion['tipo'] }}-{{ $suggestion['id'] ?? $loop->index }}-{{ $suggestion['nombre'] }}"
-                                                    wire:click="selectSuggestion('{{ addslashes($suggestion['nombre']) }}', {{ $suggestion['id'] ? $suggestion['id'] : 'null' }}, '{{ addslashes($suggestion['identificacion']) }}', '{{ $suggestion['tipo'] }}')"
-                                                    type="button"
-                                                    class="w-full rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-blue-50/70 hover:border-blue-200 p-2.5 text-left transition flex items-center justify-between gap-3">
-                                                    <div class="flex items-center gap-2.5 min-w-0">
-                                                        @if ($suggestion['tipo'] === 'Cliente')
-                                                            <span
-                                                                class="shrink-0 rounded bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 uppercase">Cliente</span>
-                                                        @elseif ($suggestion['tipo'] === 'Remitente')
-                                                            <span
-                                                                class="shrink-0 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 uppercase">Remitente</span>
-                                                        @elseif ($suggestion['tipo'] === 'Destinatario')
-                                                            <span
-                                                                class="shrink-0 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 uppercase">Destinatario</span>
-                                                        @endif
-                                                        <span
-                                                            class="font-semibold text-xs text-slate-900 truncate">{{ $suggestion['nombre'] }}</span>
-                                                    </div>
-
-                                                    @if (!empty($suggestion['identificacion']))
-                                                        <span
-                                                            class="shrink-0 font-mono text-[11px] text-slate-500 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
-                                                            {{ $suggestion['identificacion'] }}
-                                                        </span>
-                                                    @endif
-                                                </button>
-                                            @endforeach
-                                        </div>
-                                    @elseif (mb_strlen(trim($customerSearch)) >= 2 && $predictiveSuggestions->isEmpty())
-                                        <div
-                                            class="rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-500">
-                                            Sin coincidencias en catálogo. Se buscará por coincidencia de texto libre en
-                                            guías al previsualizar.
-                                        </div>
-                                    @endif
+                                <div class="rm-chips-bar">
+                                    @foreach ($ciudad_destino as $selCity)
+                                        <span class="rm-chip-tag">
+                                            <span>{{ $selCity }}</span>
+                                            <button type="button"
+                                                wire:click="removeCiudadDestino('{{ addslashes($selCity) }}')">&times;</button>
+                                        </span>
+                                    @endforeach
                                 </div>
                             @endif
 
-                            @error('cliente')
-                                <span class="field-error">{{ $message }}</span>
-                            @enderror
-                            @error('cliente_nombre')
-                                <span class="field-error">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    @endif
-                </div>
+                            <input wire:model.live.debounce.150ms="destinationCitySearch" id="destinationCitySearch"
+                                type="search" class="control" placeholder="Buscar ciudad de destino..."
+                                autocomplete="off">
 
-                {{-- BLOQUE 03: Sucursal de origen y Ciudades de destino --}}
-                <div
-                    class="rounded-xl border {{ $enabledBlocks['bloque_03'] ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50/80 opacity-65' }} p-5 space-y-4">
-                    <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                        <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">Bloque
-                                03</span>
-                            <h3 class="text-sm font-bold text-slate-900">Sucursal de Origen y Destinos</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">
-                                {{ $enabledBlocks['bloque_03'] ? 'Filtra por sucursal de origen y selecciona uno o varios cantones/ciudades de destino.' : ($tipo === '' ? 'Selecciona tu reporte para habilitar este bloque.' : 'No aplica para el tipo de reporte seleccionado.') }}
-                            </p>
-                        </div>
-                        <span
-                            class="shrink-0 rounded-full {{ $enabledBlocks['bloque_03'] ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-100 border-slate-200 text-slate-500' }} border px-2.5 py-0.5 text-[11px] font-semibold">
-                            {{ $enabledBlocks['bloque_03'] ? 'Habilitado' : 'Inhabilitado' }}
-                        </span>
+                            <div class="rm-city-list">
+                                @forelse ($listaCiudades as $city)
+                                    @php $isSelected = in_array($city, $ciudad_destino ?? [], true); @endphp
+                                    <button type="button" wire:key="city-{{ md5($city) }}"
+                                        wire:click="toggleCiudadDestino('{{ addslashes($city) }}')"
+                                        class="rm-city-btn {{ $isSelected ? 'is-selected' : '' }}">
+                                        <span>{{ $city }}</span>
+                                        <span>{{ $isSelected ? 'Activa' : 'Seleccionar' }}</span>
+                                    </button>
+                                @empty
+                                    <div class="rm-locked-msg">Sin ciudades coincidentes.</div>
+                                @endforelse
+                            </div>
+                        @endif
+
+                        @error('ciudad_destino')
+                            <span class="rm-field-error">{{ $message }}</span>
+                        @enderror
                     </div>
-
-                    @if (!$enabledBlocks['bloque_03'])
-                        <div
-                            class="rounded-lg border border-dashed border-slate-300 bg-white/70 p-3 text-xs text-slate-500">
-                            {{ $tipo === '' ? 'Selecciona tu reporte en el Bloque 01 para habilitar este bloque.' : 'Este bloque permanece inhabilitado para ' . ($reportTypes[$tipo] ?? $tipo) . ' y no envía parámetros a la consulta.' }}
-                        </div>
-                    @else
-                        <div class="form-grid">
-                            <div class="field">
-                                <label for="report-origin-branch" class="font-medium text-slate-700">Sucursal de
-                                    origen</label>
-                                <x-searchable-select wire:key="select-origin-branch-enabled"
-                                    wire:model="sucursal_origen" id="report-origin-branch" class="control">
-                                    <option value="">Todas las sucursales de origen</option>
-                                    @foreach ($originBranches as $origBranch)
-                                        <option value="{{ $origBranch->id_sucursal }}">{{ $origBranch->nombre }}
-                                        </option>
-                                    @endforeach
-                                </x-searchable-select>
-                                <p class="text-xs text-slate-500 mt-1">Opcional: déjalo en "Todas" para consultar
-                                    cualquier sucursal de origen.</p>
-                                @error('sucursal_origen')
-                                    <span class="field-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div class="field space-y-2">
-                                <div class="flex items-center justify-between gap-2">
-                                    <label for="report-dest-search" class="font-medium text-slate-700">
-                                        Ciudades / cantones de destino (múltiple)
-                                    </label>
-                                    <div class="flex items-center gap-3">
-                                        @if (!empty($ciudad_destino))
-                                            <button type="button" wire:click="clearCiudadesDestino"
-                                                class="text-xs font-semibold text-rose-600 hover:text-rose-800 hover:underline">
-                                                Limpiar ({{ count($ciudad_destino) }})
-                                            </button>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @if (!empty($ciudad_destino))
-                                    <div
-                                        class="flex flex-wrap items-center gap-1.5 p-2 rounded-lg border border-slate-200 bg-slate-50/70 min-h-[38px]">
-                                        @foreach ($ciudad_destino as $selCity)
-                                            <span
-                                                class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-800">
-                                                <span>{{ $selCity }}</span>
-                                                <button type="button"
-                                                    wire:click="removeCiudadDestino('{{ addslashes($selCity) }}')"
-                                                    class="rounded-full hover:bg-blue-200 text-blue-600 hover:text-blue-900 w-4 h-4 inline-flex items-center justify-center text-[11px] leading-none transition"
-                                                    title="Remover {{ $selCity }}">
-                                                    &times;
-                                                </button>
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <p class="text-xs text-slate-500">
-                                        Marca con visto una o varias ciudades/cantones, o deja sin marcar para incluir
-                                        todos.
-                                    </p>
-                                @endif
-
-                                <input wire:model.live.debounce.150ms="destinationCitySearch" id="report-dest-search"
-                                    type="search" placeholder="Buscar ciudad o cantón de destino..."
-                                    class="control text-xs w-full" autocomplete="off">
-
-                                @php
-                                    $trimmedCitySearch = trim($destinationCitySearch);
-                                    $filteredCities = $cities
-                                        ->filter(function ($c) use ($trimmedCitySearch) {
-                                            if ($trimmedCitySearch === '') {
-                                                return true;
-                                            }
-                                            return str_contains(mb_strtolower($c), mb_strtolower($trimmedCitySearch));
-                                        })
-                                        ->values();
-                                @endphp
-
-                                @if ($filteredCities->isNotEmpty())
-                                    <div class="flex justify-end">
-                                        <button type="button"
-                                            wire:click="selectAllFilteredCities({{ $filteredCities->toJson() }})"
-                                            class="text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline">
-                                            Marcar visibles ({{ $filteredCities->count() }})
-                                        </button>
-                                    </div>
-                                @endif
-
-                                <div
-                                    class="rounded-lg border border-slate-200 bg-white p-1.5 max-h-36 overflow-y-auto space-y-0.5">
-                                    @forelse ($filteredCities as $city)
-                                        @php $isSelected = in_array($city, $ciudad_destino, true); @endphp
-                                        <button type="button" wire:key="dest-city-{{ md5($city) }}"
-                                            wire:click="toggleCiudadDestino('{{ addslashes($city) }}')"
-                                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition {{ $isSelected ? 'bg-blue-50 text-blue-800 font-semibold border border-blue-200' : 'text-slate-700 hover:bg-slate-50' }}">
-                                            <span class="flex items-center gap-2">
-                                                <span
-                                                    class="w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] {{ $isSelected ? 'bg-blue-600 border-blue-600 text-white font-bold' : 'border-slate-300 bg-white' }}">
-                                                    @if ($isSelected)
-                                                        ✓
-                                                    @endif
-                                                </span>
-                                                <span>{{ $city }}</span>
-                                            </span>
-                                            @if ($isSelected)
-                                                <span
-                                                    class="text-[10px] text-blue-600 uppercase font-bold tracking-wider">Activa</span>
-                                            @endif
-                                        </button>
-                                    @empty
-                                        <p class="text-xs text-slate-400 p-2 text-center">
-                                            No hay ciudades que coincidan con "{{ $destinationCitySearch }}".
-                                        </p>
-                                    @endforelse
-                                </div>
-
-                                @error('ciudad_destino')
-                                    <span class="field-error">{{ $message }}</span>
-                                @enderror
-                                @error('ciudad_destino.*')
-                                    <span class="field-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                {{-- BLOQUE 04: Sucursal y Usuario --}}
-                <div
-                    class="rounded-xl border {{ $enabledBlocks['bloque_04'] ? 'border-slate-200 bg-white' : 'border-slate-200/80 bg-slate-50/80 opacity-65' }} p-5 space-y-4">
-                    <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                        <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Bloque
-                                04</span>
-                            <h3 class="text-sm font-bold text-slate-900">Sucursal y Usuario Operativo</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">
-                                {{ $enabledBlocks['bloque_04'] ? 'Filtra cierres de caja por usuario y aplica el control de sucursal asignada.' : ($tipo === '' ? 'Selecciona tu reporte para habilitar este bloque.' : 'No aplica para el tipo de reporte seleccionado.') }}
-                            </p>
-                        </div>
-                        <span
-                            class="shrink-0 rounded-full {{ $enabledBlocks['bloque_04'] ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-100 border-slate-200 text-slate-500' }} border px-2.5 py-0.5 text-[11px] font-semibold">
-                            {{ $enabledBlocks['bloque_04'] ? 'Habilitado' : 'Inhabilitado' }}
-                        </span>
-                    </div>
-
-                    @if (!$enabledBlocks['bloque_04'])
-                        <div
-                            class="rounded-lg border border-dashed border-slate-300 bg-white/70 p-3 text-xs text-slate-500">
-                            {{ $tipo === '' ? 'Selecciona tu reporte en el Bloque 01 para habilitar este bloque.' : 'Este bloque permanece inhabilitado para ' . ($reportTypes[$tipo] ?? $tipo) . ' y no envía parámetros a la consulta.' }}
-                        </div>
-                    @else
-                        <div class="form-grid">
-                            <div class="field">
-                                <label for="report-branch" class="font-medium text-slate-700">Sucursal</label>
-                                @if ($isBranchRestricted)
-                                    <select wire:model="sucursal" id="report-branch" class="control" disabled>
-                                        @foreach ($branches as $branch)
-                                            <option value="{{ $branch->id_sucursal }}">{{ $branch->nombre }}</option>
-                                        @endforeach
-                                    </select>
-                                    <p class="text-xs text-slate-500 mt-1">Tu usuario está restringido a su sucursal
-                                        asignada.</p>
-                                @else
-                                    <x-searchable-select wire:key="select-branch-enabled" wire:model="sucursal"
-                                        id="report-branch" class="control">
-                                        <option value="">Todas las sucursales</option>
-                                        @foreach ($branches as $branch)
-                                            <option value="{{ $branch->id_sucursal }}">{{ $branch->nombre }}</option>
-                                        @endforeach
-                                    </x-searchable-select>
-                                @endif
-                                @error('sucursal')
-                                    <span class="field-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div class="field">
-                                <label for="report-user" class="font-medium text-slate-700">Usuario</label>
-                                <x-searchable-select wire:key="select-user-enabled" wire:model="usuario"
-                                    id="report-user" class="control">
-                                    <option value="">Todos los usuarios</option>
-                                    @foreach ($users as $user)
-                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                    @endforeach
-                                </x-searchable-select>
-                                @error('usuario')
-                                    <span class="field-error">{{ $message }}</span>
-                                @enderror
-                            </div>
-                        </div>
-                    @endif
-                </div>
+                @endif
             </div>
-        </form>
-    </section>
 
-    {{-- MODAL DE PREVISUALIZACIÓN --}}
-    @if ($showPreviewModal && $searched && $guides)
-        <div wire:key="preview-modal" wire:keydown.escape.window="closePreviewModal"
-            class="fixed inset-0 flex items-center justify-center bg-slate-900/60 p-3 sm:p-6" style="z-index: 9999;"
-            role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
-            <div class="flex w-full max-w-7xl flex-col min-h-0 rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
-                style="max-height: 90vh;">
-                {{-- Cabecera fija del modal --}}
-                <div
-                    class="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4">
+            {{-- BLOQUE 04: Usuario de Caja --}}
+            @php $b4Enabled = ($activeFilter ?? '') === 'usuario'; @endphp
+            <div class="rm-card {{ $b4Enabled ? '' : 'is-disabled' }}">
+                <div class="rm-card-header">
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h2 id="preview-modal-title" class="text-lg font-bold text-slate-900">
-                                {{ $reportTypes[$tipo] ?? 'Reporte' }}
-                            </h2>
-                            <span class="badge">{{ number_format($totalGuidesCount) }} registros</span>
-                        </div>
-                        <p class="text-xs text-slate-500 tabular-nums mt-0.5">
-                            Período: {{ $fecha_desde }} — {{ $fecha_hasta }}
+                        <span class="rm-card-code">Bloque 04</span>
+                        <h3>Usuario de Caja</h3>
+                        <p>
+                            {{ $b4Enabled ? 'Busca y selecciona el usuario para el cierre de caja diario (id_users).' : 'Se habilita al elegir Cierre de caja diario por usuario.' }}
                         </p>
                     </div>
-
-                    <div class="flex flex-wrap items-center gap-2">
-                        <a class="button secondary font-medium" href="{{ route('reports.export.pdf', $filters) }}">
-                            Exportar PDF
-                        </a>
-                        <a class="button secondary font-medium" href="{{ route('reports.export.excel', $filters) }}">
-                            Exportar Excel protegido
-                        </a>
-                        <button type="button" wire:click="closePreviewModal" class="button primary font-semibold">
-                            Cerrar
-                        </button>
-                    </div>
+                    <span class="rm-badge {{ $b4Enabled ? 'is-active' : '' }}">
+                        {{ $b4Enabled ? 'Habilitado' : 'Inhabilitado' }}
+                    </span>
                 </div>
 
-                {{-- Cuerpo con barra de desplazamiento vertical y horizontal --}}
-                <div class="flex-1 min-h-0 overflow-y-auto overflow-x-auto p-5 space-y-5"
-                    style="max-height: calc(90vh - 84px); overflow-y: auto;">
-                    <section class="grid grid-cols-3 gap-4"
-                        style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;"
-                        aria-label="Resumen del reporte">
-                        <article class="rounded-xl border border-slate-200 bg-white p-4 border-t-4 border-t-blue-700">
-                            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Guías
-                                coincidentes</div>
-                            <div class="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
-                                {{ number_format($totalGuidesCount) }}</div>
-                        </article>
+                @if (!$b4Enabled)
+                    <div class="rm-locked-msg">
+                        Selecciona "Cierre de caja diario por usuario" en el Bloque 01 para habilitar este bloque.
+                    </div>
+                @else
+                    <div class="rm-field">
+                        <div class="rm-row-between">
+                            <label for="userSearch">Buscar usuario de caja *</label>
+                            @if (($id_users ?? '') !== '')
+                                <button type="button" wire:click="$set('id_users', '')" class="rm-link-clear">
+                                    Quitar selección
+                                </button>
+                            @endif
+                        </div>
 
-                        <article
-                            class="rounded-xl border border-slate-200 bg-white p-4 border-t-4 border-t-indigo-600">
-                            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total ítems /
-                                bultos</div>
-                            <div class="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
-                                {{ number_format($totalItems) }}</div>
-                        </article>
+                        @if ($usuarioSeleccionado)
+                            <div class="rm-selected-card">
+                                <div>
+                                    <span>Usuario seleccionado</span>
+                                    <strong>{{ $usuarioSeleccionado['name'] }}</strong>
+                                </div>
+                                <button type="button" wire:click="$set('id_users', '')" class="button secondary">
+                                    Cambiar
+                                </button>
+                            </div>
+                        @else
+                            <input wire:model.live.debounce.150ms="userSearch" id="userSearch" type="search"
+                                class="control" placeholder="Buscar usuario por nombre..." autocomplete="off">
 
-                        <article
-                            class="rounded-xl border border-slate-200 bg-white p-4 border-t-4 border-t-emerald-600">
-                            <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">Valor total del
-                                reporte</div>
-                            <div class="mt-1 text-2xl font-bold text-emerald-700 tabular-nums">
-                                ${{ number_format((float) $reportTotal, 2) }}</div>
-                        </article>
-                    </section>
-
-                    <div class="table-wrap overflow-x-auto rounded-xl border border-slate-200">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr>
-                                    <th>N.º guía</th>
-                                    <th>Fecha</th>
-                                    <th>Origen</th>
-                                    <th>Destino</th>
-                                    <th>Cliente / remitente</th>
-                                    <th>Destinatario</th>
-                                    <th>Sucursal</th>
-                                    <th>Usuario</th>
-                                    <th>Estado cobro</th>
-                                    <th class="text-right">Ítems</th>
-                                    <th class="text-right">Valor</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($guides as $guide)
-                                    <tr wire:key="report-guide-{{ $guide->id_cabecera }}">
-                                        <td class="font-semibold text-slate-900 tabular-nums">{{ $guide->num_guia }}
-                                        </td>
-                                        <td class="tabular-nums whitespace-nowrap">
-                                            {{ $guide->fecha_emision?->format('d/m/Y') }}</td>
-                                        <td>{{ $guide->ciudad_origen }}</td>
-                                        <td>{{ $guide->ciudad_destino }}</td>
-                                        <td>{{ $guide->persona?->nombre ?? $guide->nom_remitente }}</td>
-                                        <td>{{ $guide->nom_destinatario }}</td>
-                                        <td>{{ $guide->sucursal?->nombre ?? '—' }}</td>
-                                        <td>{{ $guide->usuario?->name ?? '—' }}</td>
-                                        <td>{{ $guide->estatus_cobro ?? '—' }}</td>
-                                        <td class="text-right tabular-nums">
-                                            {{ (int) ($guide->detalles_sum_cantidad ?? 0) }}</td>
-                                        <td class="text-right font-semibold text-slate-900 tabular-nums">
-                                            ${{ number_format((float) $guide->valor_guia, 2) }}</td>
-                                    </tr>
+                            <div class="rm-city-list">
+                                @forelse ($usuariosFiltrados as $uItem)
+                                    @php $isUserSel = (string) ($id_users ?? '') === $uItem['id']; @endphp
+                                    <button type="button" wire:key="usr-{{ $uItem['id'] }}"
+                                        wire:click="$set('id_users', '{{ addslashes($uItem['id']) }}')"
+                                        class="rm-city-btn {{ $isUserSel ? 'is-selected' : '' }}">
+                                        <span>{{ $uItem['name'] }}</span>
+                                        <span>{{ $isUserSel ? 'Activo' : 'Seleccionar' }}</span>
+                                    </button>
                                 @empty
-                                    <tr>
-                                        <td colspan="11">
-                                            <div class="empty-state">
-                                                <strong>Sin resultados</strong>
-                                                <span>Prueba con otros filtros o amplía el rango de fechas.</span>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <div class="rm-locked-msg">Sin usuarios coincidentes.</div>
                                 @endforelse
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="9" class="font-bold text-slate-800">Total del reporte</td>
-                                    <td class="text-right font-bold text-slate-900 tabular-nums">
-                                        {{ number_format($totalItems) }}</td>
-                                    <td class="text-right font-bold text-emerald-700 tabular-nums">
-                                        ${{ number_format((float) $reportTotal, 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                            </div>
+                        @endif
 
-                    @if ($guides->hasPages())
-                        <div class="pagination-container">{{ $guides->links() }}</div>
-                    @endif
-                </div>
+                        @error('id_users')
+                            <span class="rm-field-error">{{ $message }}</span>
+                        @enderror
+                    </div>
+                @endif
             </div>
         </div>
-    @endif
+    </section>
 </div>

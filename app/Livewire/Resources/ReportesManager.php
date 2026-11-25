@@ -2,524 +2,411 @@
 
 namespace App\Livewire\Resources;
 
-use App\Models\Cabecera;
-use App\Models\Ciudad;
-use App\Models\Persona;
-use App\Models\Scopes\AssignedBranchScope;
-use App\Models\Sucursal;
-use App\Models\User;
-use App\Services\GuideReportQuery;
-use Carbon\Carbon;
+use App\Http\Controllers\ReportesController;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 #[Layout('components.layouts.app')]
 #[Title('Reportes Gerenciales')]
 class ReportesManager extends Component
 {
-    use WithPagination;
+    public int|string|null $sucursalSecretariaId = null;
 
-    public string $tipo = '';
+    public string $ciudadSecretaria = '';
 
-    public string $fecha_desde = '';
+    public bool $isSecretaria = false;
 
-    public string $fecha_hasta = '';
+    public bool $generandoReporte = false;
 
-    public string $cliente = '';
+    public string $reportCategoryTab = 'todos';
 
-    public string $cliente_nombre = '';
+    public string $branchSearch = '';
 
-    public string $cliente_identificacion = '';
+    public string $userSearch = '';
 
-    public string $cliente_tipo = '';
+    public string $tipo_reporte = '';
+
+    public string $fecha_inicio = '';
+
+    public string $fecha_final = '';
+
+    public string $nom_remitente = '';
 
     public string $customerSearch = '';
 
-    public string $sucursal_origen = '';
+    public string $ciudad_origen = '';
 
     /** @var list<string> */
     public array $ciudad_destino = [];
 
     public string $destinationCitySearch = '';
 
-    public string $sucursal = '';
+    public string $id_users = '';
 
-    public string $usuario = '';
-
-    #[Locked]
-    public bool $searched = false;
-
-    public bool $showPreviewModal = false;
-
-    #[Locked]
-    public float $cachedReportTotal = 0.0;
-
-    #[Locked]
-    public int $cachedTotalItems = 0;
-
-    #[Locked]
-    public int $cachedTotalGuides = 0;
-
-    protected GuideReportQuery $reports;
-
-    public function boot(GuideReportQuery $reports): void
-    {
-        $this->reports = $reports;
-    }
+    /** @var array<string, array{label: string, bloque: string}> */
+    public array $reportMeta = [
+        'cliente_xfacturar' => ['label' => 'Guías por facturar (por cliente)', 'bloque' => 'cliente'],
+        'cliente_xfacturar_canceladas' => ['label' => 'Guías por facturar canceladas (por cliente)', 'bloque' => 'cliente'],
+        'cliente_xfacturar_xpagar' => ['label' => 'Guías por facturar pendientes de pago (por cliente)', 'bloque' => 'cliente'],
+        'cliente_xfacturar_xpagar_todos' => ['label' => 'Guías por facturar pendientes (Todos los clientes)', 'bloque' => 'ninguno'],
+        'cliente_todas_formas_pago' => ['label' => 'Historial completo (Todas las formas de pago)', 'bloque' => 'cliente'],
+        'manifiesto_destino' => ['label' => 'Manifiesto por ciudades de destino', 'bloque' => 'destino'],
+        'manifiesto_origen' => ['label' => 'Manifiesto por sucursal de origen', 'bloque' => 'origen'],
+        'cobro_pendiente' => ['label' => 'Guías pendientes de pago (Al cobro)', 'bloque' => 'destino'],
+        'cobro_pagado' => ['label' => 'Guías pagadas (Al cobro)', 'bloque' => 'destino'],
+        'cierres_diarios' => ['label' => 'Cierre de caja diario por usuario', 'bloque' => 'usuario'],
+        'sucursal_xfacturar_canceladas' => ['label' => 'Guías por facturar canceladas (por sucursal origen)', 'bloque' => 'origen'],
+        'sucursal_xfacturar_xpagar' => ['label' => 'Guías por facturar pendientes (por sucursal origen)', 'bloque' => 'origen'],
+        'anuladas' => ['label' => 'Reporte de guías anuladas', 'bloque' => 'ninguno'],
+    ];
 
     public function mount(): void
     {
-        $this->tipo = '';
-        $this->fecha_desde = now()->startOfMonth()->toDateString();
-        $this->fecha_hasta = now()->toDateString();
+        $this->fecha_inicio = now()->startOfMonth()->toDateString();
+        $this->fecha_final = now()->toDateString();
 
-        $user = $this->currentUser();
-        if ($user?->isBranchRestricted() && ! empty($user->id_sucursal)) {
-            $this->sucursal = (string) $user->id_sucursal;
-        }
-
-        $this->limpiarCamposBloquesInhabilitados();
+        $this->resolverRestriccionSecretaria();
     }
 
-    public function updatedTipo(): void
+    protected function resolverRestriccionSecretaria(): void
     {
-        $this->limpiarCamposBloquesInhabilitados();
-        $this->searched = false;
-        $this->showPreviewModal = false;
-        $this->resetPage();
-    }
-
-    public function updated(string $property): void
-    {
-        if (
-            $property === 'tipo'
-            || $property === 'paginators.page'
-            || $property === 'page'
-            || str_starts_with($property, 'paginators.')
-        ) {
+        $user = Auth::user();
+        if (! $user) {
             return;
         }
 
-        if (in_array($property, [
-            'fecha_desde',
-            'fecha_hasta',
-            'cliente',
-            'cliente_nombre',
-            'sucursal_origen',
-            'ciudad_destino',
-            'sucursal',
-            'usuario',
-        ], true)) {
-            $user = $this->currentUser();
-            if ($property === 'sucursal' && $user?->isBranchRestricted() && ! empty($user->id_sucursal)) {
-                $this->sucursal = (string) $user->id_sucursal;
-            }
+        $tieneRolSecretaria = false;
+        if (method_exists($user, 'hasAnyRole')) {
+            $tieneRolSecretaria = $user->hasAnyRole(['secretaria', 'Secretaria', 'SECRETARIA']);
+        } elseif (method_exists($user, 'hasRole')) {
+            $tieneRolSecretaria = $user->hasRole(['secretaria', 'Secretaria', 'SECRETARIA']);
+        }
 
-            $this->searched = false;
-            $this->showPreviewModal = false;
-            $this->resetPage();
+        $restringidoPorSucursal = method_exists($user, 'isBranchRestricted')
+            ? $user->isBranchRestricted()
+            : (! empty($user->id_sucursal));
+
+        if (! ($tieneRolSecretaria || $restringidoPorSucursal) || empty($user->id_sucursal)) {
+            $this->isSecretaria = false;
+            $this->ciudadSecretaria = '';
+            $this->sucursalSecretariaId = null;
+
+            return;
+        }
+
+        $sucursalData = DB::table('sucursal as s')
+            ->leftJoin('ciudad as c', 's.id_ciudad', '=', 'c.id_ciudad')
+            ->where('s.id_sucursal', $user->id_sucursal)
+            ->select('s.id_sucursal', 's.nombre as sucursal_nombre', 'c.descripcion as ciudad_nombre')
+            ->first();
+
+        $ciudadNombre = trim((string) ($sucursalData->ciudad_nombre ?? ''));
+        $sucursalNombre = trim((string) ($sucursalData->sucursal_nombre ?? ''));
+        $valorRestringido = $ciudadNombre !== '' ? $ciudadNombre : $sucursalNombre;
+
+        if ($valorRestringido !== '') {
+            $this->isSecretaria = true;
+            $this->ciudadSecretaria = $valorRestringido;
+            $this->sucursalSecretariaId = $sucursalData->id_sucursal ?? $user->id_sucursal;
+            $this->aplicarCiudadFijaSecretaria();
         }
     }
 
-    private function limpiarCamposBloquesInhabilitados(): void
+    protected function aplicarCiudadFijaSecretaria(): void
     {
-        $blocks = $this->reports->enabledBlocksFor($this->tipo);
+        if (! $this->isSecretaria || $this->ciudadSecretaria === '') {
+            return;
+        }
 
-        if (! $blocks['bloque_02']) {
-            $this->cliente = '';
-            $this->cliente_nombre = '';
-            $this->cliente_identificacion = '';
-            $this->cliente_tipo = '';
+        $bloque = $this->activeFilterType();
+
+        if ($bloque === 'origen') {
+            $this->ciudad_origen = $this->ciudadSecretaria;
+            $this->branchSearch = '';
+        }
+
+        if ($bloque === 'destino') {
+            $this->ciudad_destino = [$this->ciudadSecretaria];
+            $this->destinationCitySearch = '';
+        }
+    }
+
+    public function updatedTipoReporte(): void
+    {
+        $bloque = $this->activeFilterType();
+
+        if ($bloque !== 'cliente') {
+            $this->nom_remitente = '';
             $this->customerSearch = '';
         }
 
-        if (! $blocks['bloque_03']) {
-            $this->sucursal_origen = '';
+        if ($bloque !== 'origen') {
+            $this->ciudad_origen = '';
+            $this->branchSearch = '';
+        }
+
+        if ($bloque !== 'destino') {
             $this->ciudad_destino = [];
             $this->destinationCitySearch = '';
         }
 
-        if (! $blocks['bloque_04']) {
-            $user = $this->currentUser();
-            $this->sucursal = ($user?->isBranchRestricted() && ! empty($user->id_sucursal))
-                ? (string) $user->id_sucursal
-                : '';
-            $this->usuario = '';
+        if ($bloque !== 'usuario') {
+            $this->id_users = '';
+            $this->userSearch = '';
+        }
+
+        $this->aplicarCiudadFijaSecretaria();
+    }
+
+    public function updatedFechaInicio(): void
+    {
+        if ($this->fecha_inicio !== '' && $this->fecha_final !== '' && $this->fecha_final < $this->fecha_inicio) {
+            $this->fecha_final = $this->fecha_inicio;
         }
     }
 
-    public function updatedCustomerSearch(): void
+    public function selectCliente(string $nombre): void
     {
-        $this->cliente = '';
-        $this->cliente_nombre = trim($this->customerSearch);
-        $this->cliente_identificacion = '';
-        $this->cliente_tipo = '';
-        $this->searched = false;
-        $this->showPreviewModal = false;
-    }
-
-    public function selectSuggestion(string $nombre, ?int $idPersona = null, ?string $identificacion = null, string $tipo = 'Cliente'): void
-    {
-        $this->cliente = $idPersona !== null ? (string) $idPersona : '';
-        $this->cliente_nombre = trim($nombre);
-        $this->cliente_identificacion = trim((string) ($identificacion ?? ''));
-        $this->cliente_tipo = $tipo;
+        $this->nom_remitente = trim($nombre);
         $this->customerSearch = '';
-        $this->searched = false;
-        $this->showPreviewModal = false;
     }
 
-    public function selectCustomer(int $customerId): void
+    public function clearCliente(): void
     {
-        $customer = Persona::query()
-            ->where('tipo_persona', 'C')
-            ->where('estado', '1')
-            ->findOrFail($customerId);
-
-        $this->selectSuggestion(
-            nombre: (string) $customer->nombre,
-            idPersona: (int) $customer->id_persona,
-            identificacion: (string) $customer->num_dni,
-            tipo: 'Cliente'
-        );
-    }
-
-    public function useRemitenteName(): void
-    {
-        $trimmed = trim($this->customerSearch);
-        if ($trimmed !== '') {
-            $this->selectSuggestion(
-                nombre: $trimmed,
-                idPersona: null,
-                identificacion: null,
-                tipo: 'Texto libre'
-            );
-        }
-    }
-
-    public function editCustomer(): void
-    {
-        $this->customerSearch = $this->cliente_nombre;
-        $this->cliente = '';
-        $this->cliente_nombre = '';
-        $this->cliente_identificacion = '';
-        $this->cliente_tipo = '';
-        $this->searched = false;
-        $this->showPreviewModal = false;
-    }
-
-    public function clearCustomer(): void
-    {
-        $this->cliente = '';
-        $this->cliente_nombre = '';
-        $this->cliente_identificacion = '';
-        $this->cliente_tipo = '';
+        $this->nom_remitente = '';
         $this->customerSearch = '';
-        $this->searched = false;
-        $this->showPreviewModal = false;
     }
 
-    public function toggleCiudadDestino(string $city): void
+    public function toggleCiudadDestino(string $ciudad): void
     {
-        $trimmed = trim($city);
-        if ($trimmed === '') {
+        if ($this->isSecretaria && $this->ciudadSecretaria !== '') {
+            $this->ciudad_destino = [$this->ciudadSecretaria];
+
             return;
         }
 
-        if (in_array($trimmed, $this->ciudad_destino, true)) {
-            $this->ciudad_destino = array_values(array_filter($this->ciudad_destino, fn ($c) => $c !== $trimmed));
-        } else {
-            $this->ciudad_destino[] = $trimmed;
+        $ciudad = trim($ciudad);
+        if ($ciudad === '') {
+            return;
         }
 
-        $this->searched = false;
-        $this->showPreviewModal = false;
+        if (in_array($ciudad, $this->ciudad_destino, true)) {
+            $this->ciudad_destino = array_values(array_diff($this->ciudad_destino, [$ciudad]));
+        } else {
+            $this->ciudad_destino[] = $ciudad;
+        }
     }
 
-    public function removeCiudadDestino(string $city): void
+    public function removeCiudadDestino(string $ciudad): void
     {
-        $this->ciudad_destino = array_values(array_filter($this->ciudad_destino, fn ($c) => $c !== $city));
-        $this->searched = false;
-        $this->showPreviewModal = false;
+        if ($this->isSecretaria && $this->ciudadSecretaria !== '') {
+            $this->ciudad_destino = [$this->ciudadSecretaria];
+
+            return;
+        }
+
+        $this->ciudad_destino = array_values(array_diff($this->ciudad_destino, [trim($ciudad)]));
     }
 
     public function clearCiudadesDestino(): void
     {
+        if ($this->isSecretaria && $this->ciudadSecretaria !== '') {
+            $this->ciudad_destino = [$this->ciudadSecretaria];
+
+            return;
+        }
+
         $this->ciudad_destino = [];
         $this->destinationCitySearch = '';
-        $this->searched = false;
-        $this->showPreviewModal = false;
     }
 
-    /**
-     * @param  list<string>  $filteredCities
-     */
-    public function selectAllFilteredCities(array $filteredCities): void
+    public function activeFilterType(): string
     {
-        foreach ($filteredCities as $city) {
-            $trimmed = trim($city);
-            if ($trimmed !== '' && ! in_array($trimmed, $this->ciudad_destino, true)) {
-                $this->ciudad_destino[] = $trimmed;
+        return $this->reportMeta[$this->tipo_reporte]['bloque'] ?? 'ninguno';
+    }
+
+    private function extraerNombreArchivo(\Symfony\Component\HttpFoundation\Response $response, string $fallback): string
+    {
+        $disposition = (string) $response->headers->get('content-disposition', '');
+        if ($disposition !== '' && preg_match("/filename\\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i", $disposition, $m)) {
+            $raw = $m[1] !== '' ? urldecode($m[1]) : $m[2];
+            $clean = preg_replace('/[^A-Za-z0-9._-]/', '_', basename($raw));
+            if ($clean !== '') {
+                return $clean;
             }
         }
 
-        $this->searched = false;
-        $this->showPreviewModal = false;
+        return $fallback;
     }
 
-    public function preview(): void
+    public function generar(string $formato)
     {
-        $this->limpiarCamposBloquesInhabilitados();
-
-        if ($this->cliente === '' && trim($this->customerSearch) !== '') {
-            $this->cliente_nombre = trim($this->customerSearch);
+        if ($this->generandoReporte) {
+            return null;
         }
+        $this->generandoReporte = true;
 
-        $validated = $this->validateFilters();
-        $user = $this->currentUser();
-        $filters = $this->currentFilters($validated);
+        try {
+            $bloque = $this->activeFilterType();
 
-        $baseQuery = $this->reports->build($filters, $user);
+            $rules = [
+                'tipo_reporte' => ['required', 'string'],
+                'fecha_inicio' => ['required', 'date'],
+                'fecha_final' => ['required', 'date', 'after_or_equal:fecha_inicio'],
+                'formato' => ['required', 'in:pdf,excel'],
+            ];
 
-        $this->cachedTotalGuides = (int) (clone $baseQuery)->reorder()->count();
-        $this->cachedReportTotal = (float) (clone $baseQuery)->reorder()->sum('valor_guia');
-        $this->cachedTotalItems = (int) (clone $baseQuery)->reorder()->toBase()->sum(
-            DB::raw('(SELECT COALESCE(SUM(d.cantidad), 0) FROM detalle d WHERE d.id_cabecera = cabecera.id_cabecera AND d.deleted_at IS NULL)')
-        );
+            $payload = [
+                'tipo_reporte' => $this->tipo_reporte,
+                'fecha_inicio' => $this->fecha_inicio,
+                'fecha_final' => $this->fecha_final,
+                'formato' => $formato,
+            ];
 
-        $this->searched = true;
-        $this->showPreviewModal = true;
-        $this->resetPage();
-    }
+            if ($this->isSecretaria && $this->ciudadSecretaria !== '') {
+                if ($bloque === 'origen') {
+                    $this->ciudad_origen = $this->ciudadSecretaria;
+                } elseif ($bloque === 'destino') {
+                    $this->ciudad_destino = [$this->ciudadSecretaria];
+                }
+            }
 
-    public function openPreviewModal(): void
-    {
-        if ($this->searched) {
-            $this->showPreviewModal = true;
-        }
-    }
+            if ($bloque === 'cliente') {
+                $rules['nom_remitente'] = ['required', 'string', 'max:150'];
+                $payload['nom_remitente'] = $this->nom_remitente;
+            } elseif ($bloque === 'origen') {
+                $rules['ciudad_origen'] = ['required', 'string', 'max:100'];
+                $payload['ciudad_origen'] = $this->ciudad_origen;
+            } elseif ($bloque === 'destino') {
+                $rules['ciudad_destino'] = ['required', 'array', 'min:1'];
+                $payload['ciudad_destino'] = $this->ciudad_destino;
+            } elseif ($bloque === 'usuario') {
+                $rules['id_users'] = ['required'];
+                $payload['id_users'] = $this->id_users;
+            }
 
-    public function closePreviewModal(): void
-    {
-        $this->showPreviewModal = false;
-        $this->resetValidation();
-    }
+            $validated = validator($payload, $rules)->validate();
 
-    /**
-     * @param  array<string, mixed>|null  $validated
-     * @return array<string, mixed>
-     */
-    private function currentFilters(?array $validated = null): array
-    {
-        $user = $this->currentUser();
-        $sucursalFiltro = ($user?->isBranchRestricted() && ! empty($user->id_sucursal))
-            ? (string) $user->id_sucursal
-            : ($validated['sucursal'] ?? $this->sucursal);
+            $request = request()->merge($validated);
+            $response = app(ReportesController::class)->generar($request);
 
-        $destinos = array_values(array_filter(
-            $validated['ciudad_destino'] ?? $this->ciudad_destino,
-            fn ($v) => is_string($v) && $v !== ''
-        ));
+            $ext = $formato === 'excel' ? 'xlsx' : 'pdf';
+            $fallbackName = ($payload['tipo_reporte'] ?? 'reporte') . '_' . now()->format('Ymd_His') . '.' . $ext;
+            $filename = $this->extraerNombreArchivo($response, $fallbackName);
 
-        $clienteNombre = $validated['cliente_nombre'] ?? ($this->cliente_nombre !== '' ? $this->cliente_nombre : trim($this->customerSearch));
+            if ($response instanceof BinaryFileResponse) {
+                $mime = $formato === 'excel'
+                    ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    : 'application/pdf';
 
-        return $this->reports->sanitizeFiltersForType([
-            'tipo' => $validated['tipo'] ?? $this->tipo,
-            'fecha_desde' => $validated['fecha_desde'] ?? $this->fecha_desde,
-            'fecha_hasta' => $validated['fecha_hasta'] ?? $this->fecha_hasta,
-            'cliente' => $validated['cliente'] ?? $this->cliente,
-            'cliente_nombre' => $clienteNombre,
-            'sucursal_origen' => $validated['sucursal_origen'] ?? $this->sucursal_origen,
-            'ciudad_destino' => $destinos,
-            'sucursal' => $sucursalFiltro,
-            'usuario' => $validated['usuario'] ?? $this->usuario,
-        ]);
-    }
+                return response()->download($response->getFile()->getPathname(), $filename, [
+                    'Content-Type' => $mime,
+                    'X-Content-Type-Options' => 'nosniff',
+                ]);
+            }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function validateFilters(): array
-    {
-        $validated = $this->validate([
-            'tipo' => ['required', Rule::in(array_keys($this->reports->reportTypes()))],
-            'fecha_desde' => ['required', 'date', 'before_or_equal:fecha_hasta'],
-            'fecha_hasta' => ['required', 'date', 'after_or_equal:fecha_desde'],
-            'cliente' => ['nullable', 'integer', 'exists:persona,id_persona'],
-            'cliente_nombre' => ['nullable', 'string', 'max:100'],
-            'sucursal_origen' => ['nullable', 'integer', 'exists:sucursal,id_sucursal'],
-            'ciudad_destino' => ['nullable', 'array'],
-            'ciudad_destino.*' => ['string', 'exists:ciudad,descripcion'],
-            'sucursal' => ['nullable', 'integer', 'exists:sucursal,id_sucursal'],
-            'usuario' => ['nullable', 'integer', 'exists:users,id'],
-        ], [
-            'tipo.required' => 'Selecciona tu reporte antes de continuar.',
-        ], [
-            'tipo' => 'reporte',
-            'fecha_desde' => 'fecha inicial',
-            'fecha_hasta' => 'fecha final',
-            'cliente' => 'cliente',
-            'cliente_nombre' => 'nombre de remitente',
-            'sucursal_origen' => 'sucursal de origen',
-            'ciudad_destino' => 'ciudades de destino',
-            'ciudad_destino.*' => 'ciudad de destino',
-            'sucursal' => 'sucursal',
-            'usuario' => 'usuario',
-        ]);
+            $content = $response->getContent();
+            $contentType = $formato === 'excel'
+                ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                : $response->headers->get('content-type', 'application/pdf');
 
-        if (Carbon::parse($validated['fecha_desde'])->diffInDays(Carbon::parse($validated['fecha_hasta'])) > 366) {
-            throw ValidationException::withMessages([
-                'fecha_hasta' => 'El rango de fechas no puede superar 366 días.',
+            return response()->streamDownload(function () use ($content) {
+                echo $content;
+            }, $filename, [
+                'Content-Type' => $contentType,
+                'X-Content-Type-Options' => 'nosniff',
             ]);
+        } finally {
+            $this->generandoReporte = false;
         }
-
-        return $validated;
-    }
-
-    private function currentUser(): ?User
-    {
-        $user = Auth::user();
-
-        return $user instanceof User ? $user : null;
     }
 
     public function render()
     {
-        $user = $this->currentUser();
-        $isBranchRestricted = (bool) $user?->isBranchRestricted();
-        $enabledBlocks = $this->reports->enabledBlocksFor($this->tipo);
-        $filters = $this->currentFilters();
-
-        $query = ($this->searched && $this->tipo !== '')
-            ? $this->reports->build($filters, $user)
-            : null;
-
-        $allBranches = Sucursal::query()
-            ->withoutGlobalScope(AssignedBranchScope::class)
-            ->where('estado', '1')
-            ->orderBy('nombre')
-            ->get(['id_sucursal', 'nombre']);
-
-        $branches = ($isBranchRestricted && ! empty($user?->id_sucursal))
-            ? $allBranches->where('id_sucursal', (int) $user->id_sucursal)->values()
-            : $allBranches;
-
-        $predictiveSuggestions = collect();
-        $trimmedSearch = $enabledBlocks['bloque_02'] ? trim($this->customerSearch) : '';
-
-        if (mb_strlen($trimmedSearch) >= 2 && mb_strlen($trimmedSearch) <= 100) {
-            $personas = Persona::query()
-                ->where('tipo_persona', 'C')
-                ->where('estado', '1')
-                ->where(function ($query) use ($trimmedSearch): void {
-                    $query->where('nombre', 'like', "%{$trimmedSearch}%")
-                        ->orWhere('num_dni', 'like', "{$trimmedSearch}%");
-                })
-                ->orderBy('nombre')
-                ->limit(10)
-                ->get(['id_persona', 'nombre', 'num_dni']);
-
-            foreach ($personas as $p) {
-                $predictiveSuggestions->push([
-                    'id' => (int) $p->id_persona,
-                    'nombre' => (string) $p->nombre,
-                    'identificacion' => (string) ($p->num_dni ?? ''),
-                    'tipo' => 'Cliente',
-                ]);
-            }
-
-            $seenNames = $predictiveSuggestions->pluck('nombre')->map(fn ($n) => mb_strtoupper(trim((string) $n)))->all();
-
-            $remitentes = Cabecera::query()
-                ->where(function ($query) use ($trimmedSearch): void {
-                    $query->where('nom_remitente', 'like', "%{$trimmedSearch}%")
-                        ->orWhere('dni_remitente', 'like', "{$trimmedSearch}%");
-                })
+        $personas = Cache::remember('reportes.remitentes.list', now()->addMinutes(10), function () {
+            return DB::table('cabecera')
+                ->select('nom_remitente')
                 ->whereNotNull('nom_remitente')
                 ->where('nom_remitente', '!=', '')
-                ->select(['nom_remitente', 'dni_remitente'])
                 ->distinct()
-                ->limit(8)
-                ->get();
+                ->orderBy('nom_remitente', 'asc')
+                ->limit(1000)
+                ->pluck('nom_remitente')
+                ->toArray();
+        });
 
-            foreach ($remitentes as $r) {
-                $norm = mb_strtoupper(trim((string) $r->nom_remitente));
-                if (! in_array($norm, $seenNames, true)) {
-                    $seenNames[] = $norm;
-                    $predictiveSuggestions->push([
-                        'id' => null,
-                        'nombre' => (string) $r->nom_remitente,
-                        'identificacion' => (string) ($r->dni_remitente ?? ''),
-                        'tipo' => 'Remitente',
-                    ]);
-                }
-            }
+        $sucursales = Cache::remember('reportes.sucursales.nombres.v1', now()->addMinutes(10), function () {
+            return DB::table('sucursal')
+                ->where('estado', '1')
+                ->whereNull('deleted_at')
+                ->whereNotNull('nombre')
+                ->where('nombre', '!=', '')
+                ->orderBy('nombre', 'asc')
+                ->pluck('nombre')
+                ->toArray();
+        });
 
-            $destinatarios = Cabecera::query()
-                ->where(function ($query) use ($trimmedSearch): void {
-                    $query->where('nom_destinatario', 'like', "%{$trimmedSearch}%")
-                        ->orWhere('dni_destinatario', 'like', "{$trimmedSearch}%");
-                })
-                ->whereNotNull('nom_destinatario')
-                ->where('nom_destinatario', '!=', '')
-                ->select(['nom_destinatario', 'dni_destinatario'])
-                ->distinct()
-                ->limit(8)
-                ->get();
+        $ciudades = Cache::remember('reportes.ciudades.list', now()->addMinutes(10), function () {
+            return DB::table('ciudad')
+                ->where('estado', '1')
+                ->orderBy('descripcion', 'asc')
+                ->pluck('descripcion')
+                ->toArray();
+        });
 
-            foreach ($destinatarios as $d) {
-                $norm = mb_strtoupper(trim((string) $d->nom_destinatario));
-                if (! in_array($norm, $seenNames, true)) {
-                    $seenNames[] = $norm;
-                    $predictiveSuggestions->push([
-                        'id' => null,
-                        'nombre' => (string) $d->nom_destinatario,
-                        'identificacion' => (string) ($d->dni_destinatario ?? ''),
-                        'tipo' => 'Destinatario',
-                    ]);
-                }
-            }
+        $usuarios = Cache::remember('reportes.usuarios.v2', now()->addMinutes(10), function () {
+            return DB::table('users')
+                ->where('estado', '1')
+                ->orderBy('name', 'asc')
+                ->select('id', 'name')
+                ->get()
+                ->map(fn ($u) => ['id' => (int) $u->id, 'name' => (string) $u->name])
+                ->toArray();
+        });
+
+        $filteredClientes = [];
+        if ($this->activeFilterType() === 'cliente' && mb_strlen(trim($this->customerSearch)) >= 1) {
+            $q = mb_strtolower(trim($this->customerSearch));
+            $filteredClientes = array_values(array_slice(array_filter($personas, function ($name) use ($q) {
+                return str_contains(mb_strtolower((string) $name), $q);
+            }), 0, 35));
         }
 
-        if ($enabledBlocks['bloque_02'] && $this->cliente !== '' && $this->cliente_nombre === '') {
-            $foundCustomer = Persona::query()
-                ->where('tipo_persona', 'C')
-                ->find($this->cliente, ['id_persona', 'nombre', 'num_dni']);
-
-            if ($foundCustomer) {
-                $this->cliente_nombre = (string) $foundCustomer->nombre;
-                $this->cliente_identificacion = (string) ($foundCustomer->num_dni ?? '');
-                $this->cliente_tipo = 'Cliente';
+        $filteredCiudades = collect($ciudades)->filter(function ($city) {
+            $q = trim($this->destinationCitySearch);
+            if ($q === '') {
+                return true;
             }
-        }
+
+            return str_contains(mb_strtolower((string) $city), mb_strtolower($q));
+        })->values();
 
         return view('livewire.resources.reportes-manager', [
-            'guides' => $query?->paginate(15),
-            'reportTotal' => $this->cachedReportTotal,
-            'totalItems' => $this->cachedTotalItems,
-            'totalGuidesCount' => $this->cachedTotalGuides,
-            'reportTypes' => $this->reports->reportTypes(),
-            'enabledBlocks' => $enabledBlocks,
-            'isBranchRestricted' => $isBranchRestricted,
-            'selectedCustomer' => ($enabledBlocks['bloque_02'] && $this->cliente !== '')
-                ? Persona::query()
-                    ->where('tipo_persona', 'C')
-                    ->find($this->cliente, ['id_persona', 'nombre', 'num_dni'])
-                : null,
-            'predictiveSuggestions' => $predictiveSuggestions,
-            'customerResults' => $predictiveSuggestions,
-            'cities' => Ciudad::query()->where('estado', '1')->orderBy('descripcion')->pluck('descripcion'),
-            'originBranches' => $allBranches,
-            'branches' => $branches,
-            'users' => User::query()->where('estado', '1')->orderBy('name')->get(['id', 'name']),
-            'filters' => $filters,
+            'isSecretaria' => $this->isSecretaria,
+            'ciudadSecretaria' => $this->ciudadSecretaria,
+            'reportCategoryTab' => $this->reportCategoryTab,
+            'branchSearch' => $this->branchSearch,
+            'userSearch' => $this->userSearch,
+            'tipo_reporte' => $this->tipo_reporte,
+            'reportMeta' => $this->reportMeta,
+            'fecha_inicio' => $this->fecha_inicio,
+            'fecha_final' => $this->fecha_final,
+            'nom_remitente' => $this->nom_remitente,
+            'customerSearch' => $this->customerSearch,
+            'ciudad_origen' => $this->ciudad_origen,
+            'ciudad_destino' => $this->ciudad_destino,
+            'destinationCitySearch' => $this->destinationCitySearch,
+            'id_users' => $this->id_users,
+            'activeFilter' => $this->activeFilterType(),
+            'sucursales' => $sucursales,
+            'usuarios' => $usuarios,
+            'filteredClientes' => $filteredClientes,
+            'filteredCiudades' => $filteredCiudades,
         ]);
     }
 }
