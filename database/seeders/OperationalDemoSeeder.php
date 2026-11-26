@@ -103,7 +103,7 @@ class OperationalDemoSeeder extends Seeder
                 ['descripcion' => 'PAGO DEMOSTRATIVO'],
                 ['estado' => '1'],
             );
-            $guide = Cabecera::query()->where('nota', 'REGISTRO DEMOSTRATIVO SIGREXPRESS')->first();
+            $guide = Cabecera::query()->where('nota', 'REGISTRO DEMOSTRATIVO TRANSPORTE JHETRO')->first();
 
             if ($guide === null) {
                 $guide = Cabecera::query()->create([
@@ -130,7 +130,7 @@ class OperationalDemoSeeder extends Seeder
                     'estatus_cobro' => 'Pendiente',
                     'estado' => '1',
                     'estado_tracking' => 'EN BODEGA',
-                    'nota' => 'REGISTRO DEMOSTRATIVO SIGREXPRESS',
+                    'nota' => 'REGISTRO DEMOSTRATIVO TRANSPORTE JHETRO',
                 ]);
             }
 

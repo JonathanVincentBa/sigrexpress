@@ -70,9 +70,11 @@ class ReportesController extends Controller
         $tipo = $validated['tipo_reporte'];
         $formato = $validated['formato'];
         $datos = $this->reportService->obtenerDatos($tipo, $validated);
-        $titulos = $this->catalogoTitulos();
-        $tituloReporte = $titulos[$tipo] ?? 'Reporte Gerencial';
 
+        // Construimos el título dinámico incluyendo el cliente, ciudad, sucursal o usuario
+        $tituloReporte = $this->construirTituloDinamico($tipo, $validated);
+
+        // Generamos un nombre de archivo limpio (sin caracteres raros) para evitar bloqueos del navegador
         $baseNombre = Str::slug(
             $tituloReporte . '_' . $validated['fecha_inicio'] . '_al_' . $validated['fecha_final'],
             '_'
@@ -80,7 +82,7 @@ class ReportesController extends Controller
 
         if ($formato === 'excel') {
             return Excel::download(
-                new ReporteGeneralExport($datos['guias'], $tituloReporte, $validated),
+                new ReporteGeneralExport($datos['guias'], $tituloReporte, $validated, $datos),
                 $baseNombre . '.xlsx',
                 \Maatwebsite\Excel\Excel::XLSX,
                 [
@@ -109,7 +111,8 @@ class ReportesController extends Controller
      */
     public function cierreCajaUsuario()
     {
-        $usuarioId = Auth::id();
+        $usuario = Auth::user();
+        $usuarioId = $usuario->id;
         $hoy = now()->toDateString();
 
         $guias = DB::table('cabecera')
@@ -122,33 +125,79 @@ class ReportesController extends Controller
         $total = $guias->sum('valor_guia');
 
         $pdf = Pdf::loadView('reports.pdf.cierre_usuario', [
-            'usuario' => Auth::user(),
+            'usuario' => $usuario,
             'fecha' => $hoy,
             'guias' => $guias,
             'total' => $total,
         ]);
 
-        $nombreCierre = Str::slug('CierreCaja_' . $hoy, '_');
+        $nombreCierre = Str::slug('CierreCaja_' . ($usuario->name ?? 'Usuario') . '_' . $hoy, '_');
 
         return $pdf->download("{$nombreCierre}.pdf");
+    }
+
+    /**
+     * Agrega el detalle específico (Cliente, Ciudad, Sucursal o Usuario) al título del reporte.
+     */
+    private function construirTituloDinamico(string $tipo, array $filtros): string
+    {
+        $titulos = $this->catalogoTitulos();
+        $base = $titulos[$tipo] ?? 'Reporte Gerencial';
+
+        // 1. Reportes por Cliente / Remitente
+        if (!empty($filtros['nom_remitente'])) {
+            return $base . ' - ' . mb_strtoupper(trim($filtros['nom_remitente']));
+        }
+
+        // 2. Reportes por Sucursal / Ciudad de Origen
+        if (!empty($filtros['ciudad_origen'])) {
+            $origen = trim($filtros['ciudad_origen']);
+            if (is_numeric($origen)) {
+                $sucursalNombre = DB::table('sucursal')->where('id_sucursal', (int) $origen)->value('nombre');
+                $origen = $sucursalNombre ?: $origen;
+            }
+            return $base . ' - ' . mb_strtoupper($origen);
+        }
+
+        // 3. Reportes por Ciudades de Destino
+        if (!empty($filtros['ciudad_destino']) && is_array($filtros['ciudad_destino'])) {
+            $destinos = array_filter(array_map('trim', $filtros['ciudad_destino']));
+            if (count($destinos) === 1) {
+                return $base . ' - ' . mb_strtoupper(reset($destinos));
+            } elseif (count($destinos) > 1 && count($destinos) <= 3) {
+                return $base . ' - ' . mb_strtoupper(implode(', ', $destinos));
+            } elseif (count($destinos) > 3) {
+                return $base . ' - VARIAS CIUDADES (' . count($destinos) . ')';
+            }
+        }
+
+        // 4. Reportes por Usuario de Caja
+        if (!empty($filtros['id_users'])) {
+            $usuarioNombre = DB::table('users')->where('id', (int) $filtros['id_users'])->value('name');
+            if ($usuarioNombre) {
+                return $base . ' - ' . mb_strtoupper(trim($usuarioNombre));
+            }
+        }
+
+        return $base;
     }
 
     private function catalogoTitulos(): array
     {
         return [
-            'cliente_xfacturar' => 'Guias Por Facturar por Cliente',
-            'cliente_xfacturar_canceladas' => 'Guias Por Facturar Canceladas por Cliente',
-            'cliente_xfacturar_xpagar' => 'Guias Por Facturar Pendientes por Cliente',
-            'cliente_xfacturar_xpagar_todos' => 'Guias Por Facturar Pendientes Todos los Clientes',
+            'cliente_xfacturar' => 'Guías Por Facturar por Cliente',
+            'cliente_xfacturar_canceladas' => 'Guías Por Facturar Canceladas por Cliente',
+            'cliente_xfacturar_xpagar' => 'Guías Por Facturar Pendientes por Cliente',
+            'cliente_xfacturar_xpagar_todos' => 'Guías Por Facturar Pendientes Todos los Clientes',
             'cliente_todas_formas_pago' => 'Historial Completo por Cliente',
             'manifiesto_destino' => 'Manifiesto por Ciudades de Destino',
             'manifiesto_origen' => 'Manifiesto por Sucursal de Origen',
-            'cobro_pendiente' => 'Guias Pendientes de Pago Al Cobro',
-            'cobro_pagado' => 'Guias Pagadas Al Cobro',
+            'cobro_pendiente' => 'Guías Pendientes de Pago Al Cobro',
+            'cobro_pagado' => 'Guías Pagadas Al Cobro',
             'cierres_diarios' => 'Cierre de Caja Diario por Usuario',
-            'sucursal_xfacturar_canceladas' => 'Guias Por Facturar Canceladas por Sucursal de Origen',
-            'sucursal_xfacturar_xpagar' => 'Guias Por Facturar Pendientes por Sucursal de Origen',
-            'anuladas' => 'Reporte de Guias Anuladas',
+            'sucursal_xfacturar_canceladas' => 'Guías Por Facturar Canceladas por Sucursal de Origen',
+            'sucursal_xfacturar_xpagar' => 'Guías Por Facturar Pendientes por Sucursal de Origen',
+            'anuladas' => 'Reporte de Guías Anuladas',
         ];
     }
 }

@@ -365,16 +365,28 @@ class ReportesManager extends Component
                 ->orderBy('name', 'asc')
                 ->select('id', 'name')
                 ->get()
-                ->map(fn ($u) => ['id' => (int) $u->id, 'name' => (string) $u->name])
+                ->map(fn($u) => ['id' => (int) $u->id, 'name' => (string) $u->name])
                 ->toArray();
         });
 
         $filteredClientes = [];
-        if ($this->activeFilterType() === 'cliente' && mb_strlen(trim($this->customerSearch)) >= 1) {
-            $q = mb_strtolower(trim($this->customerSearch));
-            $filteredClientes = array_values(array_slice(array_filter($personas, function ($name) use ($q) {
-                return str_contains(mb_strtolower((string) $name), $q);
-            }), 0, 35));
+        $terminoCliente = trim($this->customerSearch);
+
+        if ($this->activeFilterType() === 'cliente' && mb_strlen($terminoCliente) >= 1) {
+            $q = mb_strtolower($terminoCliente);
+
+            $filteredClientes = DB::table('cabecera')
+                ->whereNotNull('nom_remitente')
+                ->where('nom_remitente', '!=', '')
+                ->whereRaw('LOWER(nom_remitente) LIKE ?', ['%' . $q . '%'])
+                ->select('nom_remitente')
+                ->distinct()
+                ->orderBy('nom_remitente', 'asc')
+                ->limit(35)
+                ->pluck('nom_remitente')
+                ->map(fn($nombre) => (string) $nombre)
+                ->values()
+                ->toArray();
         }
 
         $filteredCiudades = collect($ciudades)->filter(function ($city) {

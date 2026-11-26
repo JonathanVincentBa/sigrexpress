@@ -20,7 +20,7 @@
 </head>
 <body>
     <div class="header">
-        <h2>SIGREXPRESS — {{ strtoupper($titulo) }}</h2>
+        <h2>TRANSPORTE JHETRO — {{ strtoupper($titulo) }}</h2>
         <div class="meta">
             <strong>Período:</strong> {{ \Carbon\Carbon::parse($filtros['fecha_inicio'])->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($filtros['fecha_final'])->format('d/m/Y') }}
             @if(!empty($filtros['nom_remitente'])) | <strong>Cliente:</strong> {{ $filtros['nom_remitente'] }} @endif

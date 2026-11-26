@@ -1,4 +1,4 @@
-<div class="rm-wrap">
+<div wire:key="reportes-manager-root" class="rm-wrap">
     <style>
         .rm-wrap {
             display: flex;
@@ -126,6 +126,12 @@
             gap: 10px;
         }
 
+        .rm-actions button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+
         .rm-error-box {
             margin: 18px 24px 0;
             padding: 14px 16px;
@@ -250,6 +256,12 @@
             font-size: 11.5px;
             color: #dc2626;
             margin-top: 2px;
+        }
+
+        .rm-search-hint {
+            font-size: 11.5px;
+            color: #1d4ed8;
+            font-weight: 500;
         }
 
         .rm-cat-tabs {
@@ -547,7 +559,6 @@
         $usuarioSeleccionado = $listaUsuarios->firstWhere('id', (string) ($id_users ?? ''));
     @endphp
 
-    {{-- Encabezado --}}
     <div class="rm-hero">
         <div>
             <div class="rm-hero-sub">
@@ -577,7 +588,6 @@
         </div>
     </div>
 
-    {{-- Panel principal --}}
     <section class="rm-panel">
         <div class="rm-panel-head">
             <div>
@@ -594,19 +604,21 @@
 
             <div class="rm-actions" x-data="{ enviando: false }" x-on:livewire:navigated.window="enviando = false">
                 <button type="button" wire:click="generar('pdf')"
-                    x-on:click="enviando = true; setTimeout(() => enviando = false, 8000)" wire:loading.attr="disabled"
-                    wire:target="generar" x-bind:disabled="enviando || $wire.tipo_reporte === ''"
-                    @disabled($tipo_reporte === '') class="button danger" style="cursor: pointer;">
+                    x-on:click="if (enviando || $wire.generandoReporte) return; enviando = true; setTimeout(() => enviando = false, 15000)"
+                    wire:loading.attr="disabled" wire:target="generar"
+                    x-bind:disabled="enviando || $wire.generandoReporte || $wire.tipo_reporte === ''"
+                    @disabled($tipo_reporte === '' || ($generandoReporte ?? false)) class="button danger" style="cursor: pointer;">
                     <span wire:loading.remove wire:target="generar">Generar Reporte PDF</span>
-                    <span wire:loading wire:target="generar">Generando...</span>
+                    <span wire:loading wire:target="generar">Generando PDF...</span>
                 </button>
 
                 <button type="button" wire:click="generar('excel')"
-                    x-on:click="enviando = true; setTimeout(() => enviando = false, 8000)" wire:loading.attr="disabled"
-                    wire:target="generar" x-bind:disabled="enviando || $wire.tipo_reporte === ''"
-                    @disabled($tipo_reporte === '') class="button primary" style="cursor: pointer;">
+                    x-on:click="if (enviando || $wire.generandoReporte) return; enviando = true; setTimeout(() => enviando = false, 15000)"
+                    wire:loading.attr="disabled" wire:target="generar"
+                    x-bind:disabled="enviando || $wire.generandoReporte || $wire.tipo_reporte === ''"
+                    @disabled($tipo_reporte === '' || ($generandoReporte ?? false)) class="button primary" style="cursor: pointer;">
                     <span wire:loading.remove wire:target="generar">Exportar a Excel</span>
-                    <span wire:loading wire:target="generar">Exportando...</span>
+                    <span wire:loading wire:target="generar">Exportando Excel...</span>
                 </button>
             </div>
         </div>
@@ -623,7 +635,6 @@
         @endif
 
         <div class="rm-grid">
-            {{-- BLOQUE 01: Tipo de reporte (Clientes / Mensualizados / Varios) y rango de fechas --}}
             <div class="rm-card">
                 <div class="rm-card-header">
                     <div>
@@ -686,7 +697,7 @@
                                     @foreach ($itemsCat as $rep)
                                         @php $isRepSel = ($tipo_reporte ?? '') === $rep['value']; @endphp
                                         <button type="button" wire:key="rep-{{ $rep['value'] }}"
-                                            wire:click="$set('tipo_reporte', '{{ $rep['value'] }}')"
+                                            wire:click="$set('tipo_reporte', @js($rep['value']))"
                                             class="rm-city-btn {{ $isRepSel ? 'is-selected' : '' }}">
                                             <span>{{ $rep['label'] }}</span>
                                             <span style="font-size: 11px; color: #1d4ed8;">Seleccionar</span>
@@ -721,7 +732,6 @@
                 </div>
             </div>
 
-            {{-- BLOQUE 02: Cliente / Remitente --}}
             @php $b2Enabled = ($activeFilter ?? '') === 'cliente'; @endphp
             <div class="rm-card {{ $b2Enabled ? '' : 'is-disabled' }}">
                 <div class="rm-card-header">
@@ -762,28 +772,33 @@
                             <label for="customerSearch">Buscar cliente / remitente *</label>
                             @if (trim($customerSearch ?? '') !== '')
                                 <button type="button" wire:click="$set('customerSearch', '')" class="rm-link-clear">
-                                    Quitar selección
+                                    Limpiar búsqueda
                                 </button>
                             @endif
                         </div>
 
-                        <input wire:model.live.debounce.200ms="customerSearch" id="customerSearch" type="search"
+                        <input wire:model.live.debounce.250ms="customerSearch" id="customerSearch" type="search"
                             class="control" placeholder="Escribe para buscar cliente o remitente..."
                             autocomplete="off">
 
+                        <span wire:loading wire:target="customerSearch" class="rm-search-hint">
+                            Buscando coincidencias...
+                        </span>
+
                         @if ($listaClientes->isNotEmpty())
-                            <div class="rm-city-list">
+                            <div class="rm-city-list" wire:loading.remove wire:target="customerSearch">
                                 @foreach ($listaClientes as $clientName)
                                     <button type="button" wire:key="cli-{{ md5($clientName) }}"
-                                        wire:click="selectCliente('{{ addslashes($clientName) }}')"
-                                        class="rm-city-btn">
+                                        wire:click="selectCliente(@js($clientName))" class="rm-city-btn">
                                         <span>{{ $clientName }}</span>
                                         <span style="font-size: 11px; color: #1d4ed8;">Seleccionar</span>
                                     </button>
                                 @endforeach
                             </div>
                         @elseif (mb_strlen(trim($customerSearch ?? '')) >= 1)
-                            <span class="rm-field-error">Sin coincidencias para "{{ $customerSearch }}".</span>
+                            <span wire:loading.remove wire:target="customerSearch" class="rm-field-error">
+                                Sin coincidencias para "{{ $customerSearch }}".
+                            </span>
                         @endif
 
                         @error('nom_remitente')
@@ -793,7 +808,6 @@
                 @endif
             </div>
 
-            {{-- BLOQUE 03: Sucursal de Origen y Ciudades de Destino --}}
             @php $b3Enabled = in_array(($activeFilter ?? ''), ['origen', 'destino'], true); @endphp
             <div class="rm-card {{ $b3Enabled ? '' : 'is-disabled' }}">
                 <div class="rm-card-header">
@@ -857,7 +871,7 @@
                                 @forelse ($sucursalesFiltradas as $sucItem)
                                     @php $isSucSel = ($ciudad_origen ?? '') === $sucItem['value']; @endphp
                                     <button type="button" wire:key="suc-{{ md5($sucItem['value']) }}"
-                                        wire:click="$set('ciudad_origen', '{{ addslashes($sucItem['value']) }}')"
+                                        wire:click="$set('ciudad_origen', @js($sucItem['value']))"
                                         class="rm-city-btn {{ $isSucSel ? 'is-selected' : '' }}">
                                         <span>{{ $sucItem['label'] }}</span>
                                         <span>{{ $isSucSel ? 'Activa' : 'Seleccionar' }}</span>
@@ -909,7 +923,7 @@
                                         <span class="rm-chip-tag">
                                             <span>{{ $selCity }}</span>
                                             <button type="button"
-                                                wire:click="removeCiudadDestino('{{ addslashes($selCity) }}')">&times;</button>
+                                                wire:click="removeCiudadDestino(@js($selCity))">&times;</button>
                                         </span>
                                     @endforeach
                                 </div>
@@ -923,7 +937,7 @@
                                 @forelse ($listaCiudades as $city)
                                     @php $isSelected = in_array($city, $ciudad_destino ?? [], true); @endphp
                                     <button type="button" wire:key="city-{{ md5($city) }}"
-                                        wire:click="toggleCiudadDestino('{{ addslashes($city) }}')"
+                                        wire:click="toggleCiudadDestino(@js($city))"
                                         class="rm-city-btn {{ $isSelected ? 'is-selected' : '' }}">
                                         <span>{{ $city }}</span>
                                         <span>{{ $isSelected ? 'Activa' : 'Seleccionar' }}</span>
@@ -941,7 +955,6 @@
                 @endif
             </div>
 
-            {{-- BLOQUE 04: Usuario de Caja --}}
             @php $b4Enabled = ($activeFilter ?? '') === 'usuario'; @endphp
             <div class="rm-card {{ $b4Enabled ? '' : 'is-disabled' }}">
                 <div class="rm-card-header">
@@ -990,7 +1003,7 @@
                                 @forelse ($usuariosFiltrados as $uItem)
                                     @php $isUserSel = (string) ($id_users ?? '') === $uItem['id']; @endphp
                                     <button type="button" wire:key="usr-{{ $uItem['id'] }}"
-                                        wire:click="$set('id_users', '{{ addslashes($uItem['id']) }}')"
+                                        wire:click="$set('id_users', @js($uItem['id']))"
                                         class="rm-city-btn {{ $isUserSel ? 'is-selected' : '' }}">
                                         <span>{{ $uItem['name'] }}</span>
                                         <span>{{ $isUserSel ? 'Activo' : 'Seleccionar' }}</span>

@@ -35,7 +35,7 @@
 </head>
 
 <body>
-    <h3>SIGREXPRESS — Cierre de Caja Diario por Usuario</h3>
+    <h3>TRANSPORTE JHETRO — Cierre de Caja Diario por Usuario</h3>
     <p><strong>Usuario:</strong> {{ $usuario->name }} | <strong>Fecha:</strong>
         {{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}</p>
 
