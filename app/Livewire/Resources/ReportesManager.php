@@ -17,6 +17,8 @@ class ReportesManager extends Component
 {
     public int|string|null $sucursalSecretariaId = null;
 
+    public string $sucursalSecretariaNombre = '';
+
     public string $ciudadSecretaria = '';
 
     public bool $isSecretaria = false;
@@ -94,6 +96,7 @@ class ReportesManager extends Component
         if (! ($tieneRolSecretaria || $restringidoPorSucursal) || empty($user->id_sucursal)) {
             $this->isSecretaria = false;
             $this->ciudadSecretaria = '';
+            $this->sucursalSecretariaNombre = '';
             $this->sucursalSecretariaId = null;
 
             return;
@@ -107,30 +110,32 @@ class ReportesManager extends Component
 
         $ciudadNombre = trim((string) ($sucursalData->ciudad_nombre ?? ''));
         $sucursalNombre = trim((string) ($sucursalData->sucursal_nombre ?? ''));
-        $valorRestringido = $ciudadNombre !== '' ? $ciudadNombre : $sucursalNombre;
 
-        if ($valorRestringido !== '') {
+        if ($sucursalNombre !== '' || $ciudadNombre !== '') {
             $this->isSecretaria = true;
-            $this->ciudadSecretaria = $valorRestringido;
             $this->sucursalSecretariaId = $sucursalData->id_sucursal ?? $user->id_sucursal;
+            $this->sucursalSecretariaNombre = $sucursalNombre !== '' ? $sucursalNombre : $ciudadNombre;
+            $this->ciudadSecretaria = $ciudadNombre !== '' ? $ciudadNombre : $sucursalNombre;
             $this->aplicarCiudadFijaSecretaria();
         }
     }
 
     protected function aplicarCiudadFijaSecretaria(): void
     {
-        if (! $this->isSecretaria || $this->ciudadSecretaria === '') {
+        if (! $this->isSecretaria) {
             return;
         }
 
         $bloque = $this->activeFilterType();
 
-        if ($bloque === 'origen') {
-            $this->ciudad_origen = $this->ciudadSecretaria;
+        // Bloque 'origen' filtra por agencia/sucursal (ej. manifiesto_origen)
+        if ($bloque === 'origen' && $this->sucursalSecretariaNombre !== '') {
+            $this->ciudad_origen = $this->sucursalSecretariaNombre;
             $this->branchSearch = '';
         }
 
-        if ($bloque === 'destino') {
+        // Bloque 'destino' filtra por ciudad de destino
+        if ($bloque === 'destino' && $this->ciudadSecretaria !== '') {
             $this->ciudad_destino = [$this->ciudadSecretaria];
             $this->destinationCitySearch = '';
         }
@@ -268,10 +273,10 @@ class ReportesManager extends Component
                 'formato' => $formato,
             ];
 
-            if ($this->isSecretaria && $this->ciudadSecretaria !== '') {
-                if ($bloque === 'origen') {
-                    $this->ciudad_origen = $this->ciudadSecretaria;
-                } elseif ($bloque === 'destino') {
+            if ($this->isSecretaria) {
+                if ($bloque === 'origen' && $this->sucursalSecretariaNombre !== '') {
+                    $this->ciudad_origen = $this->sucursalSecretariaNombre;
+                } elseif ($bloque === 'destino' && $this->ciudadSecretaria !== '') {
                     $this->ciudad_destino = [$this->ciudadSecretaria];
                 }
             }
@@ -401,6 +406,7 @@ class ReportesManager extends Component
         return view('livewire.resources.reportes-manager', [
             'isSecretaria' => $this->isSecretaria,
             'ciudadSecretaria' => $this->ciudadSecretaria,
+            'sucursalSecretariaNombre' => $this->sucursalSecretariaNombre,
             'reportCategoryTab' => $this->reportCategoryTab,
             'branchSearch' => $this->branchSearch,
             'userSearch' => $this->userSearch,

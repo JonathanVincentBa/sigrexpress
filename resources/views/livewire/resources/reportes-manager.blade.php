@@ -847,8 +847,8 @@
                         @if ($isSecretaria ?? false)
                             <div class="rm-selected-card">
                                 <div>
-                                    <span>Ciudad asignada (rol secretaría — fija)</span>
-                                    <strong>{{ $ciudadSecretaria }}</strong>
+                                    <span>Agencia asignada (rol secretaría — fija)</span>
+                                    <strong>{{ $sucursalSecretariaNombre ?: $ciudadSecretaria }}</strong>
                                 </div>
                                 <span class="rm-badge is-active">Bloqueada</span>
                             </div>

@@ -85,7 +85,7 @@
                             <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                                 <div class="field">
                                     <label for="guide-number" style="font-weight: 600; color: #475569;">N.º de guía *</label>
-                                    <input wire:model="formData.num_guia" id="guide-number" type="number" class="control" readonly style="background: #f8fafc; font-weight: 700; color: #0f172a;">
+                                    <input wire:model="formData.num_guia" id="guide-number" type="number" class="control" min="1" @disabled($isViewing)>
                                     @error('formData.num_guia') <span class="field-error">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="field">
